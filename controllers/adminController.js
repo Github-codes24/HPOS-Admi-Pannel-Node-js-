@@ -94,11 +94,11 @@ const registerUser = async (req, res) => {
 };
 // POST - Login User
 const loginUser = async (req, res) => {
-    const { username, password } = req.body;
+    const { userName, password } = req.body;
 
     // Validate the login data using Joi
     const isValid = Joi.object({
-        username: Joi.string().required(),
+        userName: Joi.string().required(),
         password: Joi.string().required(),
     }).validate(req.body);
 
@@ -115,7 +115,7 @@ const loginUser = async (req, res) => {
 
     try {
         // Find the user in the database by Fullname
-        userData = await User.findOne({ username });
+        userData = await User.findOne({ userName });
 
         // If no user is found, return an error
         if (!userData) {
@@ -146,8 +146,8 @@ const loginUser = async (req, res) => {
     console.log(userData);
 
     const payload = {
-        Fullname: userData.Fullname,
-        username: userData.username,
+        fullName: userData.fullName,
+        username: userData.userName,
         userId: userData._id,
         password: userData.password,
     };

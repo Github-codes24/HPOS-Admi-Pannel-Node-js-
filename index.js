@@ -37,7 +37,7 @@ const PORT = process.env.PORT; // Port number for the server
 // Routes setup
 
 // User routes (e.g., /user/register, /user/login)
-app.use("/user", userRoutes);
+app.use("/admin", userRoutes);
 
 // Start the server and set up cron jobs
 
