@@ -4,7 +4,8 @@ const Patient = require("../models/sickleCellPatientModel");
 const getAllPatients = async (req, res) => {
   try {
     const allPatients = await Patient.find();
-    res.json(allPatients);
+    const totalCount = allPatients.length;
+    return res.status(200).json({ totalCount: totalCount, data: allPatients });
   } catch (error) {
     res
       .status(500)

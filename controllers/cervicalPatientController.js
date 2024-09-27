@@ -4,7 +4,8 @@ const CervicalPatient = require("../models/cervicalPatientModel");
 const getAllPatients = async (req, res) => {
   try {
     const allPatients = await CervicalPatient.find();
-    return res.json(allPatients);
+    const totalCount = allPatients.length;
+    return res.status(200).json({ totalCount: totalCount, data: allPatients });
   } catch (error) {
     res
       .status(500)
