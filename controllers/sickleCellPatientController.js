@@ -23,23 +23,39 @@ const SPatient = require("../models/sickleCellPatientModel");
 
     let totalData = [...allSickleCellCancerPatients];
 
-    const allowedFields = ['empName', 'centerCode', 'resultStatus', 'hplcStatus', 'bloodStatus', 'cardStatus'];
+    const {
+      empName,
+      centerCode,
+      resultStatus,
+      hplcStatus,
+      bloodStatus,
+      cardStatus
+    } = req.query;
 
-    allowedFields.forEach((field) => {
-      if (req.query[field]) {
-        if (field === 'empName') {
-          const regex = new RegExp(req.query[field], 'i');
-          totalData = totalData.filter(patient => regex.test(patient.employeeName));
-        } else if (field === 'resultStatus' || field === 'hplcStatus' || field === 'bloodStatus' || field === 'cardStatus') {
-          if (req.query[field] !== 'All') {
-            totalData = totalData.filter(patient => patient[field] === req.query[field]);
-          }
-        } else if (field === 'centerCode') {
-          totalData = totalData.filter(patient => patient.centerCode === req.query[field]);
-        }
-      }
-    });
+    // Filter by empName
+    if (empName) {
+      const regex = new RegExp(empName, 'i');
+      totalData = totalData.filter(patient => regex.test(patient.employeeName));
+    }
 
+    // Filter by status fields
+    if (resultStatus && resultStatus !== 'All') {
+      totalData = totalData.filter(patient => patient.resultStatus === resultStatus);
+    }
+    if (hplcStatus && hplcStatus !== 'All') {
+      totalData = totalData.filter(patient => patient.hplcStatus === hplcStatus);
+    }
+    if (bloodStatus && bloodStatus !== 'All') {
+      totalData = totalData.filter(patient => patient.bloodStatus === bloodStatus);
+    }
+    if (cardStatus && cardStatus !== 'All') {
+      totalData = totalData.filter(patient => patient.cardStatus === cardStatus);
+    }
+
+    // Filter by centerCode
+    if (centerCode) {
+      totalData = totalData.filter(patient => patient.centerCode === centerCode);
+    }
     const { fromDate, toDate } = req.query;
     if (fromDate && toDate) {
       const from = new Date(fromDate);
