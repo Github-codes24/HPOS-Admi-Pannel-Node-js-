@@ -1,9 +1,8 @@
 const express = require("express");
-const {
-  getAllPatients,
-} = require("../controllers/cervicalPatientController");
+const { getAllPatients,updatePatient,filterPatients } = require("../controllers/cervicalPatientController");
 const router = express.Router();
 
 router.get("/getAllPatients", getAllPatients);
-
+router.put('/patients/:patientId', updatePatient);
+router.get('/filter', filterPatients);
 module.exports = router;
