@@ -163,4 +163,30 @@ const loginUser = async (req, res) => {
     });
 };
 
-module.exports = { registerUser, loginUser };
+const BPatient = require("../models/breastPatientModel");
+const CPatient = require("../models/cervicalPatientModel");
+const SPatient = require("../models/sickleCellPatientModel");
+
+// GET: Retrieve all patient records
+const getAllPatients = async (req, res) => {
+  try {
+    const allBreastCancerPatients = await BPatient.find();
+    const allCervicalCancerPatients = await CPatient.find();
+    const allSickleCellCancerPatients = await SPatient.find();
+
+    // Combine all patients into a single array
+    const totalData = [
+        ...allBreastCancerPatients,
+        ...allCervicalCancerPatients,
+        ...allSickleCellCancerPatients
+      ];
+    const totalCount = totalData.length;
+    return res.status(200).json({ totalCount: totalCount, totalData: totalData });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving patient records", error });
+  }
+};
+
+module.exports = { registerUser, loginUser, getAllPatients };
