@@ -214,7 +214,8 @@ const getAllPatientsCount = async (req, res) => {
         ...allSickleCellCancerPatients
       ];
     const totalCount = totalData.length;
-    return res.status(200).json({ totalCount: totalCount
+    return res.status(200).json({ totalCount: totalCount, allBreastCancerPatients: allBreastCancerPatients.length,
+        allCervicalCancerPatients: allCervicalCancerPatients.length, allSickleCellCancerPatients: allSickleCellCancerPatients.length
      });
   } catch (error) {
     res
