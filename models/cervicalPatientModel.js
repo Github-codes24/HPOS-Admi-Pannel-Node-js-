@@ -5,6 +5,11 @@ const cervicalpatientSchema = new mongoose.Schema({
   // abhaNumber: { type: String, required: true, unique: true },
   // aadhaarNumber: { type: String, required: true, unique: true },
   personalName: { type: String, required: true },
+  centerCode: { type: String , default: "Center Code"},
+  bloodStatus: { type: String , default: "Pending"},
+  resultStatus: { type: String , default: "Pending"},
+  HPLC: { type: String , default: "Pending"},
+  cardStatus: { type: String , default: "Pending"},
   aadhaarNumber: { type: String, required: true, unique: true }, // Assuming Aadhaar number is unique
   number: { type: Number, required: true },
   birthYear: { type: Number, required: true },
@@ -27,7 +32,8 @@ const cervicalpatientSchema = new mongoose.Schema({
   isUnderMedication: { type: Boolean, required: true },
   isUnderBloodTransfusion: { type: Boolean, required: true },
   familyHistory: { type: Boolean, required: true },
-});
+},
+{ timestamps: true });
 
-const Patient = mongoose.model("cervicalpatient", cervicalpatientSchema);
+const Patient = mongoose.model(" cervicalpatient", cervicalpatientSchema);
 module.exports = Patient;

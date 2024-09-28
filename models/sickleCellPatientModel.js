@@ -7,6 +7,11 @@ const sickleCellPatientSchema = new mongoose.Schema({
   // aadhaarNumber: { type: String, required: true, unique: true },
   userImage: String,
   personalName: { type: String, required: true },
+  centerCode: { type: String , default: "Center Code"},
+  bloodStatus: { type: String , default: "Pending"},
+  resultStatus: { type: String , default: "Pending"},
+  HPLC: { type: String , default: "Pending"},
+  cardStatus: { type: String , default: "Pending"},
   aadhaarNumber: { type: String, required: true, unique: true }, // Assuming Aadhaar number is unique
   number: { type: Number, required: true },
   birthYear: { type: Number, required: true },
@@ -30,7 +35,8 @@ const sickleCellPatientSchema = new mongoose.Schema({
   isUnderBloodTransfusion: { type: Boolean, required: true },
   familyHistory: { type: Boolean, required: true },
   UID: { type: String },
-});
+}, 
+{ timestamps: true });
 
 const Patient = mongoose.model("Patient", sickleCellPatientSchema);
 module.exports = Patient;
