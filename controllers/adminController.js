@@ -170,9 +170,30 @@ const SPatient = require("../models/sickleCellPatientModel");
 // GET: Retrieve all patient records
 const getAllPatients = async (req, res) => {
   try {
-    const allBreastCancerPatients = await BPatient.find();
-    const allCervicalCancerPatients = await CPatient.find();
-    const allSickleCellCancerPatients = await SPatient.find();
+    const { personalName, resultStatus, fromDate, toDate, HPLC, centerCode, bloodStatus, cardStatus } = req.query;
+
+     // Build the filter object dynamically
+    const queryFilter = {};
+
+    // Apply filters only if query parameters are provided
+    if (personalName) queryFilter.personalName = personalName
+    if (resultStatus) queryFilter.resultStatus = resultStatus;
+    if (HPLC) queryFilter.HPLC = HPLC;
+    if (centerCode) queryFilter.centerCode = centerCode;
+    if (bloodStatus) queryFilter.bloodStatus = bloodStatus;
+    if (cardStatus) queryFilter.cardStatus = cardStatus;
+
+    // Apply date range filtering for createdAt field if fromDate and toDate are provided
+    if (fromDate && toDate) {
+      queryFilter.createdAt = {
+        $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59))
+      };
+    }
+
+    const allBreastCancerPatients = await BPatient.find(queryFilter);
+    const allCervicalCancerPatients = await CPatient.find(queryFilter);
+    const allSickleCellCancerPatients = await SPatient.find(queryFilter);
 
     // Combine all patients into a single array
     const totalData = [
@@ -180,8 +201,7 @@ const getAllPatients = async (req, res) => {
         ...allCervicalCancerPatients,
         ...allSickleCellCancerPatients
       ];
-    const totalCount = totalData.length;
-    return res.status(200).json({ totalCount: totalCount, totalData: totalData });
+    return res.status(200).json({ totalData: totalData });
   } catch (error) {
     res
       .status(500)
