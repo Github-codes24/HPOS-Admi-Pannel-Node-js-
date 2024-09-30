@@ -326,6 +326,80 @@ const getPatientById = async (req, res) => {
   }
 };
 
+
+const getCenterCountsByCenterAndDate = async (req, res) => {
+  try {
+    // Aggregation to count patients grouped by `centerName` and the day they were created
+    const breastCancerCounts = await BPatient.aggregate([
+      {
+        $group: {
+          _id: {
+            centerName: "$centerName",
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+          },
+          breastCancerCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const cervicalCancerCounts = await CPatient.aggregate([
+      {
+        $group: {
+          _id: {
+            centerName: "$centerName",
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+          },
+          cervicalCancerCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const sickleCellCancerCounts = await SPatient.aggregate([
+      {
+        $group: {
+          _id: {
+            centerName: "$centerName",
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+          },
+          sickleCellCancerCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Combine counts by merging arrays and summing values for the same company and date
+    const totalData = {};
+
+    // Helper function to accumulate data
+    const accumulateCounts = (dataArray, diseaseField) => {
+      dataArray.forEach(({ _id, [diseaseField]: count }) => {
+        const key = `${_id.centerName}-${_id.date}`;
+        if (!totalData[key]) {
+          totalData[key] = { centerName: _id.centerName, date: _id.date, totalCount: 0 };
+        }
+        // totalData[key][diseaseField] = count;
+        totalData[key].totalCount += count;
+      });
+    };
+
+    // Accumulate data for each disease
+    accumulateCounts(breastCancerCounts, "breastCancerCount");
+    accumulateCounts(cervicalCancerCounts, "cervicalCancerCount");
+    accumulateCounts(sickleCellCancerCounts, "sickleCellCancerCount");
+
+    // Convert the totalData object back to an array and sort by date
+    const sortedTotalData = Object.values(totalData).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    return res.status(200).json({ totalData: sortedTotalData });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving patient records",
+      error: error.message,
+    });
+  }
+};
+
+
+
 const deletePatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -365,4 +439,4 @@ const deletePatient = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getPatientById };
+module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getPatientById, getCenterCountsByCenterAndDate };

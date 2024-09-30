@@ -113,6 +113,51 @@ const getCervicalCancerPatientById = async (req, res) => {
   }
 };
 
+const getCenterCountsForCervicalCancer = async (req, res) => {
+  try {
+    // Aggregation to count patients grouped by `centerName` and the day they were created
+    const cervicalCancerCounts = await CervicalPatient.aggregate([
+      {
+        $group: {
+          _id: {
+            centerName: "$centerName",
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+          },
+          cervicalCancerCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Combine counts by merging arrays and summing values for the same company and date
+    const totalData = {};
+
+    // Helper function to accumulate data
+    const accumulateCounts = (dataArray, diseaseField) => {
+      dataArray.forEach(({ _id, [diseaseField]: count }) => {
+        const key = `${_id.centerName}-${_id.date}`;
+        if (!totalData[key]) {
+          totalData[key] = { centerName: _id.centerName, date: _id.date, totalCount: 0 };
+        }
+        // totalData[key][diseaseField] = count;
+        totalData[key].totalCount += count;
+      });
+    };
+
+    // Accumulate data for each disease
+    accumulateCounts(cervicalCancerCounts, "cervicalCancerCount");
+
+    // Convert the totalData object back to an array and sort by date
+    const sortedTotalData = Object.values(totalData).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    return res.status(200).json({ totalData: sortedTotalData });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving patient records",
+      error: error.message,
+    });
+  }
+};
+
 const deleteCervicalCancerPatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -136,4 +181,5 @@ const deleteCervicalCancerPatient = async (req, res) => {
   }
 };
 
-module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient, deleteCervicalCancerPatient, getCervicalCancerPatientById };
+module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient, deleteCervicalCancerPatient,
+    getCenterCountsForCervicalCancer, getCervicalCancerPatientById };
