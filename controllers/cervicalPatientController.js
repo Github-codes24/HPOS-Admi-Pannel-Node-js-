@@ -92,4 +92,27 @@ const updateCervicalCancerPatient = async (req, res) => {
   }
 };
 
-module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient };
+const deleteCervicalCancerPatient = async (req, res) => {
+  try {
+    const { patientId } = req.params; // Patient ID from the request parameters
+
+    let patient;
+    // Try to find the patient in model, stop once found
+    patient = await CervicalPatient.findById(patientId);
+
+    // If patient is not found in any of the models
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found in any records" });
+    };
+    await CervicalPatient.findByIdAndUpdate(patientId, { isDeleted: true });
+    return res.status(200).json({ message: "Cervical cancer patient deleted successfully" });
+    
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient, deleteCervicalCancerPatient };

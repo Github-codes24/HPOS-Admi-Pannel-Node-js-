@@ -32,6 +32,7 @@ const breastpatientSchema = new mongoose.Schema({
   isUnderMedication: { type: Boolean, required: true },
   isUnderBloodTransfusion: { type: Boolean, required: true },
   familyHistory: { type: Boolean, required: true },
+  isDeleted: { type: String, default: false },
 },
 { timestamps: true },
 );
