@@ -63,5 +63,33 @@ const getAllPatientsCount = async (req, res) => {
   }
 };
 
+const updateCervicalCancerPatient = async (req, res) => {
+  try {
+    const { patientId } = req.params; // Patient ID from the request parameters
+    const updatedData = req.body; // Updated patient data coming from the request body
 
-module.exports = { getAllPatients, getAllPatientsCount };
+    let patient;
+    // Try to find the patient in model, stop once found
+    patient = await CervicalPatient.findById(patientId);
+
+    // If patient is not found in the models
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found in any records" });
+    };
+    // Check if the request body has any fields for update
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({
+        message: "No fields provided for update. Please pass at least one field to update.",
+      });
+    };
+    await CervicalPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
+    return res.status(200).json({ message: "Cervical cancer patient updated successfully" });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient };

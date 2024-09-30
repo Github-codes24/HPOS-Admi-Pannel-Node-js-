@@ -244,4 +244,50 @@ const getAllPatientsCount = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount };
+const updatePatient = async (req, res) => {
+  try {
+    const { patientId } = req.params; // Patient ID from the request parameters
+    const updatedData = req.body; // Updated patient data coming from the request body
+
+    let patient1, patient2, patient3;
+    // Try to find the patient in each model, stop once found
+    patient1 = await BPatient.findById(patientId);
+    if (!patient1) {
+        patient2 = await CPatient.findById(patientId);
+    };
+    if (!patient2) {
+        patient3 = await SPatient.findById(patientId);
+    };
+
+    // If patient is not found in any of the models
+    if (!patient1 && !patient2 && !patient3) {
+      return res.status(404).json({ message: "Patient not found in any records" });
+    };
+    // Check if the request body has any fields for update
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({
+        message: "No fields provided for update. Please pass at least one field to update.",
+      });
+    };
+    if (patient1) {
+      await BPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
+      return res.status(200).json({ message: "Breast cancer patient updated successfully" });
+    };
+    if (patient2) {
+      await CPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
+      return res.status(200).json({ message: "Cervical cancer patient updated successfully" });
+    };
+    if (patient3) {
+      await SPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
+      return res.status(200).json({ message: "Sickle cell patient updated successfully" });
+    };
+    
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient };
