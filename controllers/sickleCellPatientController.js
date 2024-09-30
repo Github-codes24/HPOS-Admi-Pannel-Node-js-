@@ -95,6 +95,27 @@ const updateSickleCellPatient = async (req, res) => {
   }
 };
 
+const getSickleCellPatientById = async (req, res) => {
+  try {
+    const { patientId } = req.params; // Patient ID from the request parameters
+
+    let patient;
+    // Try to find the patient in model, stop once found
+    patient = await Patient.findById(patientId);
+
+    // If patient is not found in the models
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found in any records" });
+    };
+    return res.status(200).json({ message: "Sickle cell patient updated successfully", data: patient });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
 const deleteSickleCellPatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -118,4 +139,4 @@ const deleteSickleCellPatient = async (req, res) => {
   }
 };
 
-module.exports = { getAllPatients, getAllPatientsCount, updateSickleCellPatient, deleteSickleCellPatient };
+module.exports = { getAllPatients, getAllPatientsCount, updateSickleCellPatient, deleteSickleCellPatient, getSickleCellPatientById };

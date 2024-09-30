@@ -290,6 +290,42 @@ const updatePatient = async (req, res) => {
   }
 };
 
+const getPatientById = async (req, res) => {
+  try {
+    const { patientId } = req.params; // Patient ID from the request parameters
+
+    let patient1, patient2, patient3;
+    // Try to find the patient in each model, stop once found
+    patient1 = await BPatient.findById(patientId);
+    if (!patient1) {
+        patient2 = await CPatient.findById(patientId);
+    };
+    if (!patient2) {
+        patient3 = await SPatient.findById(patientId);
+    };
+
+    // If patient is not found in any of the models
+    if (!patient1 && !patient2 && !patient3) {
+      return res.status(404).json({ message: "Patient not found in any records" });
+    };
+    if (patient1) {
+      return res.status(200).json({ message: "Breast cancer patient fetched successfully", data: patient1 });
+    };
+    if (patient2) {
+      return res.status(200).json({ message: "Cervical cancer patient fetched successfully", data: patient2  });
+    };
+    if (patient3) {
+      return res.status(200).json({ message: "Sickle cell patient fetched successfully", data: patient3  });
+    };
+    
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
 const deletePatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -329,4 +365,4 @@ const deletePatient = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient };
+module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getPatientById };
