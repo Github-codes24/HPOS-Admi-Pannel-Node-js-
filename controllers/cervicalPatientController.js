@@ -158,6 +158,72 @@ const getCenterCountsForCervicalCancer = async (req, res) => {
   }
 };
 
+const getPatientCountsForGraphForCervicalCancer = async (req, res) => {
+  try {
+    const { timeFrame } = req.query; // 'daily', 'weekly', or 'monthly'
+
+    if (!timeFrame) {
+        return res.status(400).json({ status: false, message: "timeFrame is required field " });
+    };
+
+    // Determine the appropriate date format based on the time frame
+    let dateFormat;
+    if (timeFrame === 'daily') {
+      dateFormat = '%Y-%m-%d'; // Group by day
+    } else if (timeFrame === 'weekly') {
+      dateFormat = '%Y-%V'; // Group by week (ISO week number)
+    } else if (timeFrame === 'monthly') {
+      dateFormat = '%Y-%m'; // Group by month
+    } else {
+      return res.status(400).json({ message: "Invalid time frame. Choose 'daily', 'weekly', or 'monthly'." });
+    }
+
+    // Aggregation pipeline for each type of patient (breast cancer, cervical cancer, sickle cell)
+
+    const cervicalCancerCounts = await CervicalPatient.aggregate([
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: dateFormat, date: "$createdAt" } }
+          },
+          cervicalCancerCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Initialize a combined data object to accumulate counts by date
+    const totalData = {};
+
+    // Helper function to accumulate counts for each type of disease
+    const accumulateCounts = (dataArray, diseaseField) => {
+      dataArray.forEach(({ _id, [diseaseField]: count }) => {
+        const key = _id.date; // Unique key by date only
+        if (!totalData[key]) {
+          totalData[key] = { date: _id.date, totalCount: 0 }; // Initialize total count
+        }
+        totalData[key].totalCount += count; // Accumulate the total count across centers
+      });
+    };
+
+    // Accumulate counts for each disease type
+    accumulateCounts(cervicalCancerCounts, "cervicalCancerCount");
+
+    // Convert totalData object back to an array and sort by date
+    const sortedTotalData = Object.values(totalData).sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    // Return the response with aggregated and sorted data
+    return res.status(200).json({ totalData: sortedTotalData });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving patient records",
+      error: error.message,
+    });
+  }
+};
+
+
 const deleteCervicalCancerPatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -182,4 +248,4 @@ const deleteCervicalCancerPatient = async (req, res) => {
 };
 
 module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient, deleteCervicalCancerPatient,
-    getCenterCountsForCervicalCancer, getCervicalCancerPatientById };
+    getCenterCountsForCervicalCancer, getPatientCountsForGraphForCervicalCancer, getCervicalCancerPatientById };
