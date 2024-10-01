@@ -536,9 +536,6 @@ const getPatientCountsForGraph = async (req, res) => {
 
 
 
-
-
-
 const deletePatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters

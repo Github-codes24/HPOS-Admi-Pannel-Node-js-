@@ -163,24 +163,44 @@ const getPatientCountsForGraphForCervicalCancer = async (req, res) => {
     const { timeFrame } = req.query; // 'daily', 'weekly', or 'monthly'
 
     if (!timeFrame) {
-        return res.status(400).json({ status: false, message: "timeFrame is required field " });
-    };
+      return res.status(400).json({ status: false, message: "timeFrame is a required field" });
+    }
 
-    // Determine the appropriate date format based on the time frame
-    let dateFormat;
+    // Get the current date
+    const now = new Date();
+    let startDate, endDate, dateFormat, isWeekly = false;
+
     if (timeFrame === 'daily') {
-      dateFormat = '%Y-%m-%d'; // Group by day
+      // For daily, we group by hour of the current day
+      startDate = new Date(now.setHours(0, 0, 0, 0)); // Start of the day (12:00 AM)
+      endDate = new Date(now.setHours(23, 59, 59, 999)); // End of the day (11:59 PM)
+      dateFormat = '%Y-%m-%d %H:00'; // Group by hour (e.g., "2024-10-01 13:00" for 1 PM)
     } else if (timeFrame === 'weekly') {
-      dateFormat = '%Y-%V'; // Group by week (ISO week number)
+      // Weekly: Filter for the current week (Monday to Sunday)
+      const currentDay = now.getDay();
+      const diff = now.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust to Monday
+      startDate = new Date(now.setDate(diff)); // Set to the Monday of the current week
+      startDate.setHours(0, 0, 0, 0); // Start of the week (12:00 AM)
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6); // End of the week (Sunday)
+      endDate.setHours(23, 59, 59, 999);
+      dateFormat = '%Y-%m-%d'; // Group by date for now, we'll map the days after fetching data
+      isWeekly = true;
     } else if (timeFrame === 'monthly') {
+      // Monthly: Filter for the current year (January to December)
+      startDate = new Date(now.getFullYear(), 0, 1); // Start of the year (Jan 1)
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // End of the year (Dec 31)
       dateFormat = '%Y-%m'; // Group by month
     } else {
       return res.status(400).json({ message: "Invalid time frame. Choose 'daily', 'weekly', or 'monthly'." });
     }
 
     // Aggregation pipeline for each type of patient (breast cancer, cervical cancer, sickle cell)
-
+    
     const cervicalCancerCounts = await CervicalPatient.aggregate([
+      {
+        $match: { createdAt: { $gte: startDate, $lte: endDate } } // Filter by date range
+      },
       {
         $group: {
           _id: {
@@ -191,15 +211,15 @@ const getPatientCountsForGraphForCervicalCancer = async (req, res) => {
       }
     ]);
 
-    // Initialize a combined data object to accumulate counts by date
+    // Initialize a combined data object to accumulate counts by date or hour
     const totalData = {};
 
     // Helper function to accumulate counts for each type of disease
     const accumulateCounts = (dataArray, diseaseField) => {
       dataArray.forEach(({ _id, [diseaseField]: count }) => {
-        const key = _id.date; // Unique key by date only
+        const key = _id.date; // Unique key by date/hour
         if (!totalData[key]) {
-          totalData[key] = { date: _id.date, totalCount: 0 }; // Initialize total count
+          totalData[key] = { time: _id.date, totalCount: 0 }; // Initialize with `time` and `totalCount`
         }
         totalData[key].totalCount += count; // Accumulate the total count across centers
       });
@@ -208,10 +228,25 @@ const getPatientCountsForGraphForCervicalCancer = async (req, res) => {
     // Accumulate counts for each disease type
     accumulateCounts(cervicalCancerCounts, "cervicalCancerCount");
 
-    // Convert totalData object back to an array and sort by date
-    const sortedTotalData = Object.values(totalData).sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
+    // If weekly, map the dates to day names (Monday, Tuesday, etc.)
+    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const sortedTotalData = Object.values(totalData).map(entry => {
+      if (isWeekly) {
+        const dayIndex = new Date(entry.time).getDay();
+        return {
+          ...entry,
+          dayName: weekDays[dayIndex], // Add day name
+        };
+      }
+      return entry;
+    }).sort((a, b) => {
+      if (isWeekly) {
+        // Sort by day of the week (Monday to Sunday)
+        return weekDays.indexOf(a.dayName) - weekDays.indexOf(b.dayName);
+      }
+      // Otherwise, sort by date/time
+      return new Date(a.time) - new Date(b.time);
+    });
 
     // Return the response with aggregated and sorted data
     return res.status(200).json({ totalData: sortedTotalData });
