@@ -184,7 +184,7 @@ const getAllPatients = async (req, res) => {
     if (cardStatus) queryFilter.cardStatus = cardStatus;
 
     // Apply date range filtering for createdAt field if fromDate and toDate are provided
-    if (fromDate && toDate) {
+    if (fromDate && fromDate !== null && toDate && toDate !== null) {
       queryFilter.createdAt = {
         $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
         $lte: new Date(new Date(toDate).setHours(23, 59, 59))
@@ -212,10 +212,15 @@ const getAllPatients = async (req, res) => {
 const getAllPatientsCount = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
+    console.log(typeof fromDate, typeof toDate)
+
+    // Convert empty strings to undefined
+    // fromDate = fromDate =.== '' ? undefined : fromDate;
+    // toDate = toDate === '' ? undefined : toDate;
 
     // Build the date filter if fromDate and toDate are provided
     const dateFilter = {};
-    if (fromDate && toDate) {
+    if (fromDate && fromDate !== null && toDate && toDate !== null) {
       dateFilter.createdAt = {
         $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
         $lte: new Date(new Date(toDate).setHours(23, 59, 59))
