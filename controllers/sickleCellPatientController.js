@@ -226,6 +226,32 @@ const getPatientCountsForGraphForSickleCellCancer = async (req, res) => {
   }
 };
 
+const candidatesReport = async (req, res) => {
+  try {
+    // Count documents where resultStatus matches each condition
+    const totalNormal = await Patient.countDocuments({ resultStatus: "Normal(HbAA)" });
+    const totalSickleCellTrait = await Patient.countDocuments({ resultStatus: "Sickle Cell Trait(HbAS)" });
+    const totalSickleCellDisease = await Patient.countDocuments({ resultStatus: "Sickle Cell Disease(HbSS)" });
+    const totalCardDistributed = await Patient.countDocuments({ cardStatus: "Submitted" });
+
+    // You can add more counts if necessary for other statuses
+
+    // Return the counts in the response
+    return res.status(200).json({
+      totalNormal: totalNormal,
+      totalSickleCellTrait: totalSickleCellTrait,
+      totalSickleCellDisease: totalSickleCellDisease,
+      totalCardDistributed: totalCardDistributed,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error retrieving patient records",
+      error: error.message,
+    });
+  }
+};
+
+
 const deleteSickleCellPatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -250,4 +276,4 @@ const deleteSickleCellPatient = async (req, res) => {
 };
 
 module.exports = { getAllPatients, getAllPatientsCount, updateSickleCellPatient, deleteSickleCellPatient,
-    getCenterCountsForSickleCellCancer, getPatientCountsForGraphForSickleCellCancer, getSickleCellPatientById };
+    getCenterCountsForSickleCellCancer, getPatientCountsForGraphForSickleCellCancer, candidatesReport, getSickleCellPatientById };
