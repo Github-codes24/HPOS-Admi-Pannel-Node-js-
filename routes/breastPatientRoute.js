@@ -1,7 +1,7 @@
 const express = require("express");
 const {
   getAllPatients, getAllPatientsCount, updateBreastCancerPatient, deleteBreastCancerPatient, getBreastCancerPatientById,
-  getCenterCountsForBreastCancer, getPatientCountsForGraphBreastCancer,
+  getCenterCountsForBreastCancer, getPatientCountsForGraphBreastCancer, updateManyUsersForBreastCancer,
 } = require("../controllers/breastPatientController");
 const router = express.Router();
 
@@ -12,5 +12,6 @@ router.post("/deleteBreastCancerPatient/:patientId", deleteBreastCancerPatient);
 router.get("/getBreastCancerPatientById/:patientId", getBreastCancerPatientById);
 router.get("/getCenterCountsForBreastCancer", getCenterCountsForBreastCancer);
 router.get("/getPatientCountsForGraphBreastCancer", getPatientCountsForGraphBreastCancer);
+router.put("/updateManyUsersForBreastCancer", updateManyUsersForBreastCancer);
 
 module.exports = router;

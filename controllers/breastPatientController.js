@@ -259,6 +259,39 @@ const getPatientCountsForGraphBreastCancer = async (req, res) => {
   }
 };
 
+const updateManyUsersForBreastCancer = async (req, res) => {
+  try {
+    const { updates } = req.body; // Expecting updates to be an array of objects with { id, data }
+    const ids = updates.map(update => update.id); // Extract all IDs from the updates array
+
+    // Create an array to hold update promises
+    const updatePromises = [];
+
+    // Check and update in BPatient model
+    const bPatients = await Patient.find({ _id: { $in: ids } });
+    bPatients.forEach(bPatient => {
+      const updateData = updates.find(update => update.id.toString() === bPatient._id.toString());
+      if (updateData) {
+        updatePromises.push(Patient.findByIdAndUpdate(bPatient._id, updateData.data, { new: true }));
+      }
+    });
+
+    // Wait for all updates to complete
+    const updatedDocuments = await Promise.all(updatePromises);
+
+    // Send a response with the updated documents
+    return res.status(200).json({
+      message: 'Documents updated successfully',
+      data: updatedDocuments,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Error updating documents',
+      error: error.message,
+    });
+  }
+};
+
 const deleteBreastCancerPatient = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -283,4 +316,4 @@ const deleteBreastCancerPatient = async (req, res) => {
 };
 
 module.exports = { getAllPatients, getAllPatientsCount, updateBreastCancerPatient, deleteBreastCancerPatient,
-    getCenterCountsForBreastCancer, getPatientCountsForGraphBreastCancer, getBreastCancerPatientById };
+    getCenterCountsForBreastCancer, getPatientCountsForGraphBreastCancer, updateManyUsersForBreastCancer, getBreastCancerPatientById };
