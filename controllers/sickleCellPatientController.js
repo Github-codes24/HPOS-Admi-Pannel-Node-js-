@@ -118,6 +118,10 @@ const getSickleCellPatientById = async (req, res) => {
 
 const getCenterCountsForSickleCellCancer = async (req, res) => {
   try {
+    const allPatients = await Patient.find();
+    const allPatientsSubmitted = await Patient.find({ cardStatus: "Submitted"});
+    const allPatientsHangOut = await Patient.find({ cardStatus: "HangOut"});
+    const allPatientsPending = await Patient.find({ cardStatus: "Pending"});
     // Aggregation to count patients grouped by `centerName` and the day they were created
     const sickleCellCancerCounts = await Patient.aggregate([
       {
@@ -152,7 +156,9 @@ const getCenterCountsForSickleCellCancer = async (req, res) => {
     // Convert the totalData object back to an array and sort by date
     const sortedTotalData = Object.values(totalData).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    return res.status(200).json({ totalData: sortedTotalData });
+    return res.status(200).json({ totalData: sortedTotalData, totalCard: allPatients.length, totalDistributed: allPatientsSubmitted.length,
+        totalPrinted: allPatientsHangOut.length, totalRemaining: allPatientsPending.length
+     });
   } catch (error) {
     return res.status(500).json({
       message: "Error retrieving patient records",
