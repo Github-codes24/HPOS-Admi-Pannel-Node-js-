@@ -199,7 +199,7 @@ const getPatientCountsForGraphBreastCancer = async (req, res) => {
       return res.status(400).json({ message: "Invalid time frame. Choose 'daily', 'weekly', or 'monthly'." });
     }
 
-    // Aggregation pipeline for each type of patient (breast cancer, cervical cancer, sickle cell)
+    // Aggregation pipeline for each type of patient (breast cancer)
     const breastCancerCounts = await Patient.aggregate([
       {
         $match: { createdAt: { $gte: startDate, $lte: endDate } } // Filter by date range
