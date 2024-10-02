@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, loginUser, getAllPatients, updateManyUsers,
+const { registerUser, loginUser, getAllPatients, updateManyUsers, createCenterCode,
     getAllPatientsCount, updatePatient, deletePatient, getPatientCountsForGraph, getPatientById, getCenterCountsByCenterAndDate } = require("../controllers/adminController"); // Import user-related controller functions
 const { isAuth } = require("../middleware/Authmiddelware"); // Import authentication middleware
 
@@ -20,6 +20,7 @@ router.get("/getPatientById/:patientId", getPatientById);
 router.get("/getCenterCountsByCenterAndDate", getCenterCountsByCenterAndDate);
 router.get("/getPatientCountsForGraph", getPatientCountsForGraph);
 router.put("/updateManyUsers", updateManyUsers);
+router.post("/createCenterCode", createCenterCode);
 
 // Export the Express app to be used in other parts of the application
 module.exports = router;

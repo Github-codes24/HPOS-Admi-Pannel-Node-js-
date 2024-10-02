@@ -664,5 +664,46 @@ const deletePatient = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient,
+const centerCodeModel = require("../models/centerCodeModel");
+
+const createCenterCode = async (req, res) => {
+    try {
+        const {centerName} = req.body;
+
+        // Check if the centerName already exists in the database
+        const existingCenterName = await centerCodeModel.findOne({ centerName });
+        if (existingCenterName) {
+        return res.status(400).json({
+            message: "Center name already exists",
+        });
+        }
+
+        let centerCode;
+        let isUnique = false;
+    
+        // Loop to generate a unique 5-digit centerCode
+        while (!isUnique) {
+          // Generate a random 5-digit number
+          centerCode = Math.floor(10000 + Math.random() * 90000); // Random number between 10000 and 99999
+    
+          // Check if the generated centerCode already exists in the database
+          const existingCenter = await centerCodeModel.findOne({ centerCode });
+          if (!existingCenter) {
+            isUnique = true; // If no existing center, break the loop
+          }
+        }
+        const data = await centerCodeModel.create({ centerName: centerName, centerCode });
+        return res.status(201).json({
+            message: "Center code created successfully",
+            data,
+          });
+    } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, createCenterCode,
     getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate };
