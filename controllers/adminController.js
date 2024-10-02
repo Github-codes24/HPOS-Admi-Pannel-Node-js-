@@ -209,6 +209,47 @@ const getAllPatients = async (req, res) => {
   }
 };
 
+const getAllPatientsForSubmitted = async (req, res) => {
+  try {
+    const { personalName, resultStatus, fromDate, toDate, HPLC, centerCode, bloodStatus, cardStatus } = req.query;
+
+     // Build the filter object dynamically
+    const queryFilter = {};
+
+    // Apply filters only if query parameters are provided
+    if (personalName) queryFilter.personalName = personalName
+    if (resultStatus) queryFilter.resultStatus = resultStatus;
+    if (HPLC) queryFilter.HPLC = HPLC;
+    if (centerCode) queryFilter.centerCode = centerCode;
+    if (bloodStatus) queryFilter.bloodStatus = bloodStatus;
+    if (cardStatus) queryFilter.cardStatus = cardStatus;
+
+    // Apply date range filtering for createdAt field if fromDate and toDate are provided
+    if (fromDate && fromDate !== null && toDate && toDate !== null) {
+      queryFilter.createdAt = {
+        $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59))
+      };
+    }
+
+    const allBreastCancerPatients = await BPatient.find({...queryFilter, bloodStatus: "Submitted", resultStatus: "Submitted", cardStatus: "Submitted" });
+    const allCervicalCancerPatients = await CPatient.find({queryFilter, bloodStatus: "Submitted", resultStatus: "Submitted", cardStatus: "Submitted" });
+    const allSickleCellCancerPatients = await SPatient.find({queryFilter, bloodStatus: "Submitted", resultStatus: "Submitted", cardStatus: "Submitted" });
+
+    // Combine all patients into a single array
+    const totalData = [
+        ...allBreastCancerPatients,
+        ...allCervicalCancerPatients,
+        ...allSickleCellCancerPatients
+      ];
+    return res.status(200).json({ totalData: totalData });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving patient records", error });
+  }
+};
+
 const getAllPatientsCount = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
@@ -705,5 +746,5 @@ const createCenterCode = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, createCenterCode,
+module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
     getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate };

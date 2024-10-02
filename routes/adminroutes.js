@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, loginUser, getAllPatients, updateManyUsers, createCenterCode,
+const { registerUser, loginUser, getAllPatients, updateManyUsers, createCenterCode,getAllPatientsForSubmitted,
     getAllPatientsCount, updatePatient, deletePatient, getPatientCountsForGraph, getPatientById, getCenterCountsByCenterAndDate } = require("../controllers/adminController"); // Import user-related controller functions
 const { isAuth } = require("../middleware/Authmiddelware"); // Import authentication middleware
 
@@ -19,6 +19,7 @@ router.post("/deletePatient/:patientId", deletePatient);
 router.get("/getPatientById/:patientId", getPatientById);
 router.get("/getCenterCountsByCenterAndDate", getCenterCountsByCenterAndDate);
 router.get("/getPatientCountsForGraph", getPatientCountsForGraph);
+router.get("/getAllPatientsForSubmitted", getAllPatientsForSubmitted);
 router.put("/updateManyUsers", updateManyUsers);
 router.post("/createCenterCode", createCenterCode);
 
