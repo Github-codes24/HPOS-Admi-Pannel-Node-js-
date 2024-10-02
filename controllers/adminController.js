@@ -750,5 +750,30 @@ const createCenterCode = async (req, res) => {
   }
 };
 
+const getCities = async (req, res) => {
+
+  try {
+    const country = 'India'; // Set the country field here
+    const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+      method: 'POST', // Use POST method as required by the API
+      headers: {
+        'Content-Type': 'application/json', // Specify the content type
+      },
+      body: JSON.stringify({ country }), // Send the country in the request body
+    });
+
+    const data = await response.json(); // Parse the JSON response
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error fetching cities');
+    }
+
+    res.status(200).json(data); // Return the fetched cities
+  } catch (error) {
+    // Error handling
+    res.status(500).json({ message: 'Error fetching cities', error: error.message });
+  }
+};
+
 module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
-    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate };
+    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities };
