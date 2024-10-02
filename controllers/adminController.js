@@ -523,8 +523,8 @@ const getPatientCountsForGraph = async (req, res) => {
     // Initialize the totalData with zeros for each month of the year
     const sortedTotalDataMonthly = [];
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
 
     for (let month = 0; month < 12; month++) {
@@ -567,9 +567,6 @@ const getPatientCountsForGraph = async (req, res) => {
     });
   }
 };
-
-
-
 
 
 
