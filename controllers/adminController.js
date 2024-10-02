@@ -232,9 +232,13 @@ const getAllPatientsForSubmitted = async (req, res) => {
       };
     }
 
-    const allBreastCancerPatients = await BPatient.find({...queryFilter, bloodStatus: "Submitted", resultStatus: "Submitted", cardStatus: "Submitted" });
-    const allCervicalCancerPatients = await CPatient.find({queryFilter, bloodStatus: "Submitted", resultStatus: "Submitted", cardStatus: "Submitted" });
-    const allSickleCellCancerPatients = await SPatient.find({queryFilter, bloodStatus: "Submitted", resultStatus: "Submitted", cardStatus: "Submitted" });
+    
+    const bStatus = ["A+ve", "A-ve", "B+ve", "B-ve", "O+ve", "O-ve", "AB+ve", "AB-ve"]
+    const rStatus = ["Normal(HbAA)", "Sickle Cell Trait(HbAS)", "Sickle Cell Disease(HbSS)"]
+
+    const allBreastCancerPatients = await BPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allCervicalCancerPatients = await CPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allSickleCellCancerPatients = await SPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
 
     // Combine all patients into a single array
     const totalData = [

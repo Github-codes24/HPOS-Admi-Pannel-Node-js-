@@ -93,6 +93,47 @@ const updateBreastCancerPatient = async (req, res) => {
   }
 };
 
+const getAllPatientsForSubmittedForBreastCancer = async (req, res) => {
+  try {
+    const { personalName, resultStatus, fromDate, toDate, HPLC, centerCode, bloodStatus, cardStatus } = req.query;
+
+     // Build the filter object dynamically
+    const queryFilter = {};
+
+    // Apply filters only if query parameters are provided
+    if (personalName) queryFilter.personalName = personalName
+    if (resultStatus) queryFilter.resultStatus = resultStatus;
+    if (HPLC) queryFilter.HPLC = HPLC;
+    if (centerCode) queryFilter.centerCode = centerCode;
+    if (bloodStatus) queryFilter.bloodStatus = bloodStatus;
+    if (cardStatus) queryFilter.cardStatus = cardStatus;
+
+    // Apply date range filtering for createdAt field if fromDate and toDate are provided
+    if (fromDate && fromDate !== null && toDate && toDate !== null) {
+      queryFilter.createdAt = {
+        $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59))
+      };
+    }
+
+    
+    const bStatus = ["A+ve", "A-ve", "B+ve", "B-ve", "O+ve", "O-ve", "AB+ve", "AB-ve"]
+    const rStatus = ["Normal(HbAA)", "Sickle Cell Trait(HbAS)", "Sickle Cell Disease(HbSS)"]
+
+    const allBreastCancerPatients = await Patient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+
+    // Combine all patients into a single array
+    const totalData = [
+        ...allBreastCancerPatients,
+      ];
+    return res.status(200).json({ totalData: totalData });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving patient records", error });
+  }
+};
+
 const getBreastCancerPatientById = async (req, res) => {
   try {
     const { patientId } = req.params; // Patient ID from the request parameters
@@ -350,5 +391,5 @@ const deleteBreastCancerPatient = async (req, res) => {
   }
 };
 
-module.exports = { getAllPatients, getAllPatientsCount, updateBreastCancerPatient, deleteBreastCancerPatient,
+module.exports = { getAllPatients, getAllPatientsCount, updateBreastCancerPatient, deleteBreastCancerPatient, getAllPatientsForSubmittedForBreastCancer,
     getCenterCountsForBreastCancer, getPatientCountsForGraphBreastCancer, updateManyUsersForBreastCancer, getBreastCancerPatientById };

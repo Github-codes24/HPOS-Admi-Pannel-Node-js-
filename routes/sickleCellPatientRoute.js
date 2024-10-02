@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  getAllPatients, getAllPatientsCount, updateSickleCellPatient, deleteSickleCellPatient, updateManyUsersForSickleCellCancer,
+  getAllPatients, getAllPatientsCount, updateSickleCellPatient, deleteSickleCellPatient, updateManyUsersForSickleCellCancer, getAllPatientsForSubmittedForSickleCellCancer,
   getCenterCountsForSickleCellCancer, getSickleCellPatientById, getPatientCountsForGraphForSickleCellCancer, candidatesReport
 } = require("../controllers/sickleCellPatientController");
 const router = express.Router();
@@ -12,6 +12,7 @@ router.post("/deleteSickleCellPatient/:patientId", deleteSickleCellPatient);
 router.get("/getSickleCellPatientById/:patientId", getSickleCellPatientById);
 router.get("/getCenterCountsForSickleCellCancer", getCenterCountsForSickleCellCancer);
 router.get("/getPatientCountsForGraphForSickleCellCancer", getPatientCountsForGraphForSickleCellCancer);
+router.get("/getAllPatientsForSubmittedForSickleCellCancer", getAllPatientsForSubmittedForSickleCellCancer);
 router.get("/candidatesReport", candidatesReport);
 router.put("/updateManyUsersForSickleCellCancer", updateManyUsersForSickleCellCancer);
 
