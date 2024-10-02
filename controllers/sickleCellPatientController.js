@@ -171,13 +171,14 @@ const getPatientCountsForGraphForSickleCellCancer = async (req, res) => {
 
     // Get the current date
     const now = new Date();
-    let startDate, endDate, dateFormat, isWeekly = false;
+    let startDate, endDate, dateFormat, isWeekly = false, isMonthly = false, isDaily = false;
 
     if (timeFrame === 'daily') {
       // For daily, we group by hour of the current day
       startDate = new Date(now.setHours(0, 0, 0, 0)); // Start of the day (12:00 AM)
       endDate = new Date(now.setHours(23, 59, 59, 999)); // End of the day (11:59 PM)
       dateFormat = '%Y-%m-%d %H:00'; // Group by hour (e.g., "2024-10-01 13:00" for 1 PM)
+      isDaily = true;
     } else if (timeFrame === 'weekly') {
       // Weekly: Filter for the current week (Monday to Sunday)
       const currentDay = now.getDay();
@@ -187,18 +188,19 @@ const getPatientCountsForGraphForSickleCellCancer = async (req, res) => {
       endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 6); // End of the week (Sunday)
       endDate.setHours(23, 59, 59, 999);
-      dateFormat = '%Y-%m-%d'; // Group by date for now, we'll map the days after fetching data
+      dateFormat = '%Y-%m-%d'; // Group by date for now
       isWeekly = true;
     } else if (timeFrame === 'monthly') {
       // Monthly: Filter for the current year (January to December)
       startDate = new Date(now.getFullYear(), 0, 1); // Start of the year (Jan 1)
       endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // End of the year (Dec 31)
       dateFormat = '%Y-%m'; // Group by month
+      isMonthly = true;
     } else {
       return res.status(400).json({ message: "Invalid time frame. Choose 'daily', 'weekly', or 'monthly'." });
     }
 
-    // Aggregation pipeline for each type of patient (breast cancer, cervical cancer, sickle cell)
+    // Aggregation pipeline for each type of patient (sickle cell)
     
     const sickleCellCancerCounts = await Patient.aggregate([
       {
@@ -231,28 +233,61 @@ const getPatientCountsForGraphForSickleCellCancer = async (req, res) => {
     // Accumulate counts for each disease type
     accumulateCounts(sickleCellCancerCounts, "sickleCellCancerCount");
 
-    // If weekly, map the dates to day names (Monday, Tuesday, etc.)
-    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const sortedTotalData = Object.values(totalData).map(entry => {
-      if (isWeekly) {
-        const dayIndex = new Date(entry.time).getDay();
-        return {
-          ...entry,
-          dayName: weekDays[dayIndex], // Add day name
-        };
-      }
-      return entry;
-    }).sort((a, b) => {
-      if (isWeekly) {
-        // Sort by day of the week (Monday to Sunday)
-        return weekDays.indexOf(a.dayName) - weekDays.indexOf(b.dayName);
-      }
-      // Otherwise, sort by date/time
-      return new Date(a.time) - new Date(b.time);
-    });
+    // For daily, initialize the totalData with zeros for each hour of the day
+    const sortedTotalDataDaily = [];
+    for (let hour = 0; hour < 24; hour++) {
+      const hourKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:00`;
+      
+      // Format hour to AM/PM
+      const formattedHour = hour % 12 === 0 ? '12' : (hour % 12).toString(); // Convert to 12-hour format
+      const amPm = hour < 12 ? 'AM' : 'PM'; // Determine AM or PM
+      
+      sortedTotalDataDaily.push({
+        time: `${formattedHour} ${amPm}`, // AM/PM format
+        totalCount: totalData[hourKey]?.totalCount || 0 // Use existing count or 0
+      });
+    }
 
-    // Return the response with aggregated and sorted data
-    return res.status(200).json({ totalData: sortedTotalData });
+    // Initialize the totalData with zeros for each month of the year
+    const sortedTotalDataMonthly = [];
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    for (let month = 0; month < 12; month++) {
+      const formattedMonth = `${now.getFullYear()}-${(month + 1).toString().padStart(2, '0')}`; // Format to YYYY-MM
+      sortedTotalDataMonthly.push({
+        time: monthNames[month], // Month name
+        totalCount: totalData[formattedMonth]?.totalCount || 0 // Use existing count or 0
+      });
+    }
+
+    // Return the response based on the time frame
+    if (isDaily) {
+      return res.status(200).json({ totalData: sortedTotalDataDaily });
+    } else if (isWeekly) {
+      const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const sortedTotalDataWeekly = [];
+
+      // Initialize the totalData with zeros for each day of the week
+      for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(startDate);
+        dayDate.setDate(startDate.getDate() + i); // Get each day of the week
+        const formattedDate = dayDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
+        sortedTotalDataWeekly.push({
+          time: formattedDate,
+          dayName: weekDays[(i + 1) % 7], // Adjust to get day name
+          totalCount: totalData[formattedDate]?.totalCount || 0 // Use existing count or 0
+        });
+      }
+
+      return res.status(200).json({ totalData: sortedTotalDataWeekly });
+    } else if (isMonthly) {
+      return res.status(200).json({ totalData: sortedTotalDataMonthly });
+    } else {
+      return res.status(200).json({ totalData: Object.values(totalData).sort((a, b) => new Date(a.time) - new Date(b.time)) });
+    }
   } catch (error) {
     return res.status(500).json({
       message: "Error retrieving patient records",
