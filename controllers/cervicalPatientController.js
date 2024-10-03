@@ -7,7 +7,6 @@ const getAllPatients = async (req, res) => {
 
      // Build the filter object dynamically
     const queryFilter = {};
-
     // Apply filters only if query parameters are provided
     if (personalName) queryFilter.personalName = personalName
     if (resultStatus) queryFilter.resultStatus = resultStatus;

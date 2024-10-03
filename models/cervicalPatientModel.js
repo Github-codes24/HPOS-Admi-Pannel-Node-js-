@@ -36,5 +36,5 @@ const cervicalpatientSchema = new mongoose.Schema({
 },
 { timestamps: true });
 
-const Patient = mongoose.model(" cervicalpatient", cervicalpatientSchema);
+const Patient = mongoose.model("cervicalpatient", cervicalpatientSchema);
 module.exports = Patient;

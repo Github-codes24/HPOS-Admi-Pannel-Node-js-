@@ -750,6 +750,24 @@ const createCenterCode = async (req, res) => {
   }
 };
 
+const getCenterName = async (req, res) => {
+    try {
+
+        // Check if the centerName already exists in the database
+        const existingCenterName = await centerCodeModel.find().select({ centerName: 1});
+        
+        return res.status(201).json({
+            message: "Center code created successfully",
+            data: existingCenterName,
+          });
+    } catch (error) {
+    return res.status(500).json({
+      message: "Error updating patient data",
+      error: error.message,
+    });
+  }
+};
+
 const getCities = async (req, res) => {
 
   try {
@@ -776,4 +794,4 @@ const getCities = async (req, res) => {
 };
 
 module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
-    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities };
+    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities, getCenterName };
