@@ -170,18 +170,14 @@ const SPatient = require("../models/sickleCellPatientModel");
 // GET: Retrieve all patient records
 const getAllPatients = async (req, res) => {
   try {
-    const { personalName, resultStatus, fromDate, toDate, HPLC, centerCode, bloodStatus, cardStatus } = req.query;
+    const { fromDate, toDate } = req.query;
 
-     // Build the filter object dynamically
-    const queryFilter = {};
+    // Build the filter object dynamically by copying all request query parameters
+    let queryFilter = { ...req.query };
 
-    // Apply filters only if query parameters are provided
-    if (personalName) queryFilter.personalName = personalName
-    if (resultStatus) queryFilter.resultStatus = resultStatus;
-    if (HPLC) queryFilter.HPLC = HPLC;
-    if (centerCode) queryFilter.centerCode = centerCode;
-    if (bloodStatus) queryFilter.bloodStatus = bloodStatus;
-    if (cardStatus) queryFilter.cardStatus = cardStatus;
+    // Remove fromDate and toDate from the queryFilter since we handle them separately
+    delete queryFilter.fromDate;
+    delete queryFilter.toDate;
 
     // Apply date range filtering for createdAt field if fromDate and toDate are provided
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
@@ -225,19 +221,14 @@ const getAllPatients = async (req, res) => {
 
 const getAllPatientsForSubmitted = async (req, res) => {
   try {
-    const { personalName, resultStatus, fromDate, toDate, HPLC, centerCode, bloodStatus, cardStatus } = req.query;
+    const { fromDate, toDate } = req.query;
 
-     // Build the filter object dynamically
-    const queryFilter = {};
+    // Build the filter object dynamically by copying all request query parameters
+    let queryFilter = { ...req.query };
 
-    // Apply filters only if query parameters are provided
-    if (personalName) queryFilter.personalName = personalName
-    if (resultStatus) queryFilter.resultStatus = resultStatus;
-    if (HPLC) queryFilter.HPLC = HPLC;
-    if (centerCode) queryFilter.centerCode = centerCode;
-    if (bloodStatus) queryFilter.bloodStatus = bloodStatus;
-    if (cardStatus) queryFilter.cardStatus = cardStatus;
-
+    // Remove fromDate and toDate from the queryFilter since we handle them separately
+    delete queryFilter.fromDate;
+    delete queryFilter.toDate;
     // Apply date range filtering for createdAt field if fromDate and toDate are provided
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
       queryFilter.createdAt = {

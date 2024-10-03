@@ -22,6 +22,7 @@ const breastpatientSchema = new mongoose.Schema({
   caste: { type: String, required: true },
   subCaste: { type: String, required: true },
   address: {
+    address: { type: String, required: true },
     house: { type: String, required: true },
     city: { type: String, required: true },
     district: { type: String, required: true },
