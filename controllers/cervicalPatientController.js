@@ -23,8 +23,20 @@ const getAllPatients = async (req, res) => {
       };
     }
     const allPatients = await CervicalPatient.find(queryFilter);
+    const formattedData = allPatients.map(patient => {
+        if (patient.birthYear) {
+          const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
+          return {
+            ...patient._doc, // Spread other patient data
+            birthDay: day,
+            birthMonth: month,
+            birthYear: year
+          };
+        }
+        return patient;
+    });
     const totalCount = allPatients.length;
-    return res.status(200).json({ data: allPatients });
+    return res.status(200).json({ data: formattedData });
   } catch (error) {
     res
       .status(500)

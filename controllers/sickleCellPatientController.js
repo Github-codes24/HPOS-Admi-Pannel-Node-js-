@@ -26,7 +26,19 @@ const getAllPatients = async (req, res) => {
 
     const allPatients = await Patient.find(queryFilter);
     const totalCount = allPatients.length;
-    return res.status(200).json({ data: allPatients });
+    const formattedData = allPatients.map(patient => {
+        if (patient.birthYear) {
+          const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
+          return {
+            ...patient._doc, // Spread other patient data
+            birthDay: day,
+            birthMonth: month,
+            birthYear: year
+          };
+        }
+        return patient;
+    });
+    return res.status(200).json({ data: formattedData });
   } catch (error) {
     res
       .status(500)

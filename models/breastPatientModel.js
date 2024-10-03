@@ -12,7 +12,7 @@ const breastpatientSchema = new mongoose.Schema({
   cardStatus: { type: String , default: "Pending"},
   aadhaarNumber: { type: String, required: true, unique: true }, // Assuming Aadhaar number is unique
   number: { type: Number, required: true },
-  birthYear: { type: Number, required: true },
+  birthYear: { type: String, required: true },
   gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
   mobileNumber: { type: String, required: true, match: /^[0-9]{10}$/ },
   fathersName: { type: String, required: true },
