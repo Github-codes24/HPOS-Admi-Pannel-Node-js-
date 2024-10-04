@@ -185,7 +185,7 @@ const getAllPatientsForSubmittedForCervicalCancer = async (req, res) => {
 
     
     const bStatus = ["A+ve", "A-ve", "B+ve", "B-ve", "O+ve", "O-ve", "AB+ve", "AB-ve"]
-    const rStatus = ["Normal(HbAA)", "Sickle Cell Trait(HbAS)", "Sickle Cell Disease(HbSS)"]
+    const rStatus = ["Positive"]
 
     const allCervicalCancerPatients = await CervicalPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
 
