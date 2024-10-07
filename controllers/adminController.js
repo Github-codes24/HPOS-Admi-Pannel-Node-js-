@@ -797,6 +797,28 @@ const getCities = async (req, res) => {
     res.status(500).json({ message: 'Error fetching cities', error: error.message });
   }
 };
+const categoryModel = require("../models/categoryModel")
+const casteModel = require("../models/casteModel")
+
+const getCategory = async (req, res) => {
+    try {
+       const c = await categoryModel.find();
+        return res.status(200).json({ status: true, categoryList: c });
+    } catch (error) {
+    // Error handling
+    res.status(500).json({ message: 'Error fetching cities', error: error.message });
+  }
+};
+
+const getCaste = async (req, res) => {
+    try {
+       const c = await casteModel.find();
+        return res.status(200).json({ status: true, casteList: c });
+    } catch (error) {
+    // Error handling
+    res.status(500).json({ message: 'Error fetching cities', error: error.message });
+  }
+};
 
 module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
-    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities, getCenterName };
+    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities, getCenterName, getCategory, getCaste };
