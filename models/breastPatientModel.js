@@ -16,11 +16,11 @@ const breastpatientSchema = new mongoose.Schema({
   gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
   mobileNumber: { type: String, required: true, match: /^[0-9]{10}$/ },
   fathersName: { type: String, required: true },
-  motherName: { type: String, required: true }, // New field added
+  motherName: { type: String }, // New field added
   maritalStatus: { type: String, required: true },
   category: { type: String, required: true },
   caste: { type: String, required: true },
-  subCaste: { type: String, required: true },
+  subCaste: { type: String },
   address: {
     address: { type: String, required: true },
     house: { type: String, required: true },
