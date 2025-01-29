@@ -39,6 +39,17 @@ const PORT = process.env.PORT; // Port number for the server
 
 // Routes setup
 
+app.get("/", (req, res) => {
+  res.send(`
+    <html>
+      <head><title>HPOS</title></head>
+      <body>
+        <h1>Welcome to Hpos admin</h1>
+      </body>
+    </html>
+  `);
+});
+
 // User routes (e.g., /user/register, /user/login)
 app.use("/admin", userRoutes);
 app.use("/sickleCell", sickleCellPatientRoutes);
