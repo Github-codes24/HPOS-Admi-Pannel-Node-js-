@@ -1,28 +1,24 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
     fullName: {
         type: String,
-        require: true,
+        required: true,
     },
     password: {
         type: String,
-        require: true,
-    },
-    confirmPassword: {
-        type: String,
-        require: true,
+        required: true,
     },
     userName: {
         type: String,
-        require: true,
+        required: true,
         unique: true,
     },
-    // token: {
-    //     type: String,
-    //     require: true,
-    // },
-});
+},
+      { timestamps: true }
+
+);
 
 module.exports = mongoose.model("admin", UserSchema);

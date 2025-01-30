@@ -6,166 +6,119 @@ const { default: mongoose } = require("mongoose");
 const { use } = require("../routes/adminroutes");
 const BCRYPT_SALTS = Number(process.env.BCRYPT_SALTS); // Number of salt rounds for bcrypt hashing
 const ObjectId = mongoose.Types.ObjectId;
-
-// POST - Register User
-const registerUser = async (req, res) => {
-    // Data Validation using Joi
-    const isValid = Joi.object({
-        Fullname: Joi.string().required(),
-        username: Joi.string().min(3).max(25).alphanum().required(),
-        password: Joi.string().min(8).required(),
-        confirmpassword: Joi.string().min(8).required(),
-    }).validate(req.body);
-
-    // Check if validation failed
-    if (isValid.error) {
-        return res.status(400).send({
-            status: 400,
-            message: "Invalid Input",
-            data: isValid.error,
-        });
-    }
-
-    // Check if passwords match
-    if (req.body.password !== req.body.confirmpassword) {
-        return res.status(400).send({
-            status: 400,
-            message: "Passwords do not match",
-        });
-    }
-
-    try {
-        // Check if the Fullname orusername already exists in the database
-        const userExists = await User.find({
-            $or: [{ username: req.body.username }],
-        });
-
-        // If user already exists, return an error
-        if (userExists.length !== 0) {
-            return res.status(400).send({
-                status: 400,
-                message: "Username/Mobile number already exists",
-            });
-        }
-    } catch (err) {
-        // Handle error while checking existing user
-        return res.status(400).send({
-            status: 400,
-            message: "Error while checking if username or mobile number exists",
-            data: err,
-        });
-    }
-
-    // Hash the user's password before saving
-    const hashedPassword = await bcrypt.hash(req.body.password, BCRYPT_SALTS);
-
-    // Generate a JWT token for the user
-    const token = await jwt.sign(
-        {
-            Fullname: req.body.userid,
-            password: hashedPassword,
-        },
-        process.env.JWT_SECRET
-    );
-    console.log(token);
-
-    // Create a new user object with the hashed password and token
-    const userObj = new User({
-        Fullname: req.body.Fullname,
-        password: hashedPassword,
-        username: req.body.username,
-        token: token,
-    });
-
-    try {
-        await userObj.save();
-
-        return res.status(201).send({
-            status: 201,
-            message: "User registered successfully",
-        });
-    } catch (err) {
-        return res.status(400).send({
-            status: 400,
-            message: "Error while save user to DB",
-            data: err,
-        });
-    }
-};
-// POST - Login User
-const loginUser = async (req, res) => {
-    const { userName, password } = req.body;
-
-    // Validate the login data using Joi
-    const isValid = Joi.object({
-        userName: Joi.string().required(),
-        password: Joi.string().required(),
-    }).validate(req.body);
-
-    // Check if validation failed
-    if (isValid.error) {
-        return res.status(400).send({
-            status: 400,
-            message: "Invalid Username/password",
-            data: isValid.error,
-        });
-    }
-
-    let userData;
-
-    try {
-        // Find the user in the database by Fullname
-        userData = await User.findOne({ userName });
-
-        // If no user is found, return an error
-        if (!userData) {
-            return res.status(400).send({
-                status: 400,
-                message: "No user found! Please register",
-            });
-        }
-    } catch (err) {
-        // Handle error while fetching user data
-        return res.status(400).send({
-            status: 400,
-            message: "Error while fetching user data",
-            data: err,
-        });
-    }
-
-    // Compare the provided password with the stored hashed password
-    const isPasswordSame = await bcrypt.compare(password, userData.password);
-
-    // If the password does not match, return an error
-    if (!isPasswordSame) {
-        return res.status(400).send({
-            status: 400,
-            message: "Incorrect Password",
-        });
-    }
-    console.log(userData);
-
-    const payload = {
-        fullName: userData.fullName,
-        username: userData.userName,
-        userId: userData._id,
-        password: userData.password,
-    };
-
-    // Generate a JWT token (if needed)
-    const token = jwt.sign(payload, process.env.JWT_SECRET);
-
-    // Send success response
-    return res.status(200).send({
-        status: 200,
-        message: "User Logged in successfully",
-        data: { token, payload }, // Uncomment if you want to return the token and payload
-    });
-};
-
 const BPatient = require("../models/breastPatientModel");
 const CPatient = require("../models/cervicalPatientModel");
 const SPatient = require("../models/sickleCellPatientModel");
+
+// POST - Register User
+const register = async (req, res) => {
+  try {
+    const { fullName,  password, confirmPassword, userName } = req.body;
+
+    // Validate required fields
+    if (!fullName) {
+      return res.status(400).json({ success: false, message: "Full name is required" });
+    }
+    if (!userName) {
+      return res.status(400).json({ success: false, message: "Username is required" });
+    }
+   
+    if (!password) {
+      return res.status(400).json({ success: false, message: "Password is required" });
+    }
+    if (!confirmPassword) {
+      return res.status(400).json({ success: false, message: "confirmPassword is required" });
+    }
+    
+    // Ensure password and confirmPassword match
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and confirm password do not match",
+      });
+    }
+
+    const isUserAlready = await User.findOne({ userName });
+    if (isUserAlready) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+  
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = await User.create({
+      fullName,
+      userName,
+      password: hashedPassword,
+    });
+    newUser.save();
+
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully.",
+      user: newUser,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error creating user",
+      error: error.message,
+    });
+  }
+};
+
+
+// POST - Login User
+const loginUser = async (req, res) => {
+  try {
+    const { userName, password } = req.body;
+
+    // Validate input
+    if (!userName) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+    if (!password) {
+      return res.status(400).json({ message: "password is required." });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ userName });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Compare password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    // Send response
+    return res.status(200).json({
+      success: true,
+      message: "Login successful.",
+      data: {
+        id: user._id,
+        name: user.fullName,
+        userName: user.userName,
+      },
+      token: token,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server Error", error: error.message });
+  }
+};
+
+
 
 // GET: Retrieve all patient records
 const getAllPatients = async (req, res) => {
@@ -193,12 +146,12 @@ const getAllPatients = async (req, res) => {
 
     // Combine all patients into a single array
     const totalData = [
-        ...allBreastCancerPatients,
-        ...allCervicalCancerPatients,
-        ...allSickleCellCancerPatients
-      ];
+      ...allBreastCancerPatients,
+      ...allCervicalCancerPatients,
+      ...allSickleCellCancerPatients
+    ];
 
-      // Map over the totalData array to extract day, month, and year from birthYear
+    // Map over the totalData array to extract day, month, and year from birthYear
     const formattedData = totalData.map(patient => {
       if (patient.birthYear) {
         const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
@@ -237,20 +190,20 @@ const getAllPatientsForSubmitted = async (req, res) => {
       };
     }
 
-    
+
     const bStatus = ["A+ve", "A-ve", "B+ve", "B-ve", "O+ve", "O-ve", "AB+ve", "AB-ve"]
     const rStatus = ["Normal(HbAA)", "Sickle Cell Trait(HbAS)", "Sickle Cell Disease(HbSS)"]
 
-    const allBreastCancerPatients = await BPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
-    const allCervicalCancerPatients = await CPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
-    const allSickleCellCancerPatients = await SPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allBreastCancerPatients = await BPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allCervicalCancerPatients = await CPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allSickleCellCancerPatients = await SPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
 
     // Combine all patients into a single array
     const totalData = [
-        ...allBreastCancerPatients,
-        ...allCervicalCancerPatients,
-        ...allSickleCellCancerPatients
-      ];
+      ...allBreastCancerPatients,
+      ...allCervicalCancerPatients,
+      ...allSickleCellCancerPatients
+    ];
     return res.status(200).json({ totalData: totalData });
   } catch (error) {
     res
@@ -284,14 +237,15 @@ const getAllPatientsCount = async (req, res) => {
 
     // Combine all patients into a single array
     const totalData = [
-        ...allBreastCancerPatients,
-        ...allCervicalCancerPatients,
-        ...allSickleCellCancerPatients
-      ];
+      ...allBreastCancerPatients,
+      ...allCervicalCancerPatients,
+      ...allSickleCellCancerPatients
+    ];
     const totalCount = totalData.length;
-    return res.status(200).json({ totalCount: totalCount, allBreastCancerPatients: allBreastCancerPatients.length,
-        allCervicalCancerPatients: allCervicalCancerPatients.length, allSickleCellCancerPatients: allSickleCellCancerPatients.length
-     });
+    return res.status(200).json({
+      totalCount: totalCount, allBreastCancerPatients: allBreastCancerPatients.length,
+      allCervicalCancerPatients: allCervicalCancerPatients.length, allSickleCellCancerPatients: allSickleCellCancerPatients.length
+    });
   } catch (error) {
     res
       .status(500)
@@ -308,10 +262,10 @@ const updatePatient = async (req, res) => {
     // Try to find the patient in each model, stop once found
     patient1 = await BPatient.findById(patientId);
     if (!patient1) {
-        patient2 = await CPatient.findById(patientId);
+      patient2 = await CPatient.findById(patientId);
     };
     if (!patient2) {
-        patient3 = await SPatient.findById(patientId);
+      patient3 = await SPatient.findById(patientId);
     };
 
     // If patient is not found in any of the models
@@ -336,7 +290,7 @@ const updatePatient = async (req, res) => {
       await SPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
       return res.status(200).json({ message: "Sickle cell patient updated successfully" });
     };
-    
+
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -353,10 +307,10 @@ const getPatientById = async (req, res) => {
     // Try to find the patient in each model, stop once found
     patient1 = await BPatient.findById(patientId);
     if (!patient1) {
-        patient2 = await CPatient.findById(patientId);
+      patient2 = await CPatient.findById(patientId);
     };
     if (!patient2) {
-        patient3 = await SPatient.findById(patientId);
+      patient3 = await SPatient.findById(patientId);
     };
 
     // If patient is not found in any of the models
@@ -367,12 +321,12 @@ const getPatientById = async (req, res) => {
       return res.status(200).json({ message: "Breast cancer patient fetched successfully", data: patient1 });
     };
     if (patient2) {
-      return res.status(200).json({ message: "Cervical cancer patient fetched successfully", data: patient2  });
+      return res.status(200).json({ message: "Cervical cancer patient fetched successfully", data: patient2 });
     };
     if (patient3) {
-      return res.status(200).json({ message: "Sickle cell patient fetched successfully", data: patient3  });
+      return res.status(200).json({ message: "Sickle cell patient fetched successfully", data: patient3 });
     };
-    
+
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -559,11 +513,11 @@ const getPatientCountsForGraph = async (req, res) => {
     const sortedTotalDataDaily = [];
     for (let hour = 0; hour < 24; hour++) {
       const hourKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:00`;
-      
+
       // Format hour to AM/PM
       const formattedHour = hour % 12 === 0 ? '12' : (hour % 12).toString(); // Convert to 12-hour format
       const amPm = hour < 12 ? 'AM' : 'PM'; // Determine AM or PM
-      
+
       sortedTotalDataDaily.push({
         time: `${formattedHour} ${amPm}`, // AM/PM format
         totalCount: totalData[hourKey]?.totalCount || 0 // Use existing count or 0
@@ -683,10 +637,10 @@ const deletePatient = async (req, res) => {
     // Try to find the patient in each model, stop once found
     patient1 = await BPatient.findById(patientId);
     if (!patient1) {
-        patient2 = await CPatient.findById(patientId);
+      patient2 = await CPatient.findById(patientId);
     };
     if (!patient2) {
-        patient3 = await SPatient.findById(patientId);
+      patient3 = await SPatient.findById(patientId);
     };
 
     // If patient is not found in any of the models
@@ -705,7 +659,7 @@ const deletePatient = async (req, res) => {
       await SPatient.findByIdAndUpdate(patientId, { isDeleted: true });
       return res.status(200).json({ message: "Sickle cell patient deleted successfully" });
     };
-    
+
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -717,37 +671,37 @@ const deletePatient = async (req, res) => {
 const centerCodeModel = require("../models/centerCodeModel");
 
 const createCenterCode = async (req, res) => {
-    try {
-        const {centerName} = req.body;
+  try {
+    const { centerName } = req.body;
 
-        // Check if the centerName already exists in the database
-        const existingCenterName = await centerCodeModel.findOne({ centerName });
-        if (existingCenterName) {
-        return res.status(400).json({
-            message: "Center name already exists",
-        });
-        }
+    // Check if the centerName already exists in the database
+    const existingCenterName = await centerCodeModel.findOne({ centerName });
+    if (existingCenterName) {
+      return res.status(400).json({
+        message: "Center name already exists",
+      });
+    }
 
-        let centerCode;
-        let isUnique = false;
-    
-        // Loop to generate a unique 5-digit centerCode
-        while (!isUnique) {
-          // Generate a random 5-digit number
-          centerCode = Math.floor(10000 + Math.random() * 90000); // Random number between 10000 and 99999
-    
-          // Check if the generated centerCode already exists in the database
-          const existingCenter = await centerCodeModel.findOne({ centerCode });
-          if (!existingCenter) {
-            isUnique = true; // If no existing center, break the loop
-          }
-        }
-        const data = await centerCodeModel.create({ centerName: centerName, centerCode });
-        return res.status(201).json({
-            message: "Center code created successfully",
-            data,
-          });
-    } catch (error) {
+    let centerCode;
+    let isUnique = false;
+
+    // Loop to generate a unique 5-digit centerCode
+    while (!isUnique) {
+      // Generate a random 5-digit number
+      centerCode = Math.floor(10000 + Math.random() * 90000); // Random number between 10000 and 99999
+
+      // Check if the generated centerCode already exists in the database
+      const existingCenter = await centerCodeModel.findOne({ centerCode });
+      if (!existingCenter) {
+        isUnique = true; // If no existing center, break the loop
+      }
+    }
+    const data = await centerCodeModel.create({ centerName: centerName, centerCode });
+    return res.status(201).json({
+      message: "Center code created successfully",
+      data,
+    });
+  } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
       error: error.message,
@@ -756,16 +710,16 @@ const createCenterCode = async (req, res) => {
 };
 
 const getCenterName = async (req, res) => {
-    try {
+  try {
 
-        // Check if the centerName already exists in the database
-        const existingCenterName = await centerCodeModel.find().select({ centerName: 1});
-        
-        return res.status(201).json({
-            message: "Center code created successfully",
-            data: existingCenterName,
-          });
-    } catch (error) {
+    // Check if the centerName already exists in the database
+    const existingCenterName = await centerCodeModel.find().select({ centerName: 1 });
+
+    return res.status(201).json({
+      message: "Center code created successfully",
+      data: existingCenterName,
+    });
+  } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
       error: error.message,
@@ -801,24 +755,26 @@ const categoryModel = require("../models/categoryModel")
 const casteModel = require("../models/casteModel")
 
 const getCategory = async (req, res) => {
-    try {
-       const c = await categoryModel.find();
-        return res.status(200).json({ status: true, categoryList: c });
-    } catch (error) {
+  try {
+    const c = await categoryModel.find();
+    return res.status(200).json({ status: true, categoryList: c });
+  } catch (error) {
     // Error handling
     res.status(500).json({ message: 'Error fetching cities', error: error.message });
   }
 };
 
 const getCaste = async (req, res) => {
-    try {
-       const c = await casteModel.find();
-        return res.status(200).json({ status: true, casteList: c });
-    } catch (error) {
+  try {
+    const c = await casteModel.find();
+    return res.status(200).json({ status: true, casteList: c });
+  } catch (error) {
     // Error handling
     res.status(500).json({ message: 'Error fetching cities', error: error.message });
   }
 };
 
-module.exports = { registerUser, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
-    getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities, getCenterName, getCategory, getCaste };
+module.exports = {
+  register, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
+  getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities, getCenterName, getCategory, getCaste
+};

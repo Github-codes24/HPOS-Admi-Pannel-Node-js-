@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, loginUser, getAllPatients, updateManyUsers, createCenterCode,getAllPatientsForSubmitted, getCities, getCenterName,
+const { register, loginUser, getAllPatients, updateManyUsers, createCenterCode, getAllPatientsForSubmitted, getCities, getCenterName,
     getAllPatientsCount, updatePatient, deletePatient, getPatientCountsForGraph, getPatientById, getCenterCountsByCenterAndDate, getCategory, getCaste } = require("../controllers/adminController"); // Import user-related controller functions
 const { isAuth } = require("../middleware/Authmiddelware"); // Import authentication middleware
 
@@ -7,10 +7,11 @@ const router = express.Router(); // Initialize Express application
 
 // Route for user registration
 // This route handles POST requests to "/register" and calls the registerUser controller function
-router.post("/register", registerUser);
 
 // Route for user login
 // This route handles POST requests to "/login" and calls the loginUser controller function
+router.post("/register", register);
+
 router.post("/login", loginUser);
 router.get("/getAllPatients", getAllPatients);
 router.get("/getAllPatientsCount", getAllPatientsCount);
