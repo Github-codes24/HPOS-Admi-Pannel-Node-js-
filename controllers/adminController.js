@@ -686,7 +686,15 @@ const updateManyUsers = async (req, res) => {
       );
       if (updateData) {
         updatePromises.push(
-          BPatient.findByIdAndUpdate(bPatient._id, updateData.data, {
+          BPatient.findByIdAndUpdate(bPatient._id, {
+            $set: {
+              ...updateData.data,
+              address: {
+                ...bPatient.address, // Keep existing address data
+                ...updateData.data.address, // Merge new address fields
+              },
+            },
+          }, {
             new: true,
           })
         );
@@ -701,7 +709,15 @@ const updateManyUsers = async (req, res) => {
       );
       if (updateData) {
         updatePromises.push(
-          CPatient.findByIdAndUpdate(cPatient._id, updateData.data, {
+          CPatient.findByIdAndUpdate(cPatient._id,{
+            $set: {
+              ...updateData.data,
+              address: {
+                ...cPatient.address, // Keep existing address data
+                ...updateData.data.address, // Merge new address fields
+              },
+            },
+          }, {
             new: true,
           })
         );
@@ -716,7 +732,15 @@ const updateManyUsers = async (req, res) => {
       );
       if (updateData) {
         updatePromises.push(
-          SPatient.findByIdAndUpdate(sPatient._id, updateData.data, {
+          SPatient.findByIdAndUpdate(sPatient._id, {
+            $set: {
+              ...updateData.data,
+              address: {
+                ...sPatient.address, // Keep existing address data
+                ...updateData.data.address, // Merge new address fields
+              },
+            },
+          }, {
             new: true,
           })
         );
