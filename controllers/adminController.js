@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/admin");
 const { default: mongoose } = require("mongoose");
@@ -13,23 +13,31 @@ const SPatient = require("../models/sickleCellPatientModel");
 // POST - Register User
 const register = async (req, res) => {
   try {
-    const { fullName,  password, confirmPassword, userName } = req.body;
+    const { fullName, password, confirmPassword, userName } = req.body;
 
     // Validate required fields
     if (!fullName) {
-      return res.status(400).json({ success: false, message: "Full name is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Full name is required" });
     }
     if (!userName) {
-      return res.status(400).json({ success: false, message: "Username is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Username is required" });
     }
-   
+
     if (!password) {
-      return res.status(400).json({ success: false, message: "Password is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
     }
     if (!confirmPassword) {
-      return res.status(400).json({ success: false, message: "confirmPassword is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "confirmPassword is required" });
     }
-    
+
     // Ensure password and confirmPassword match
     if (password !== confirmPassword) {
       return res.status(400).json({
@@ -42,7 +50,7 @@ const register = async (req, res) => {
     if (isUserAlready) {
       return res.status(400).json({ message: "User already exists" });
     }
-  
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -53,7 +61,6 @@ const register = async (req, res) => {
       password: hashedPassword,
     });
     newUser.save();
-
 
     return res.status(201).json({
       success: true,
@@ -68,7 +75,6 @@ const register = async (req, res) => {
     });
   }
 };
-
 
 // POST - Login User
 const loginUser = async (req, res) => {
@@ -118,12 +124,10 @@ const loginUser = async (req, res) => {
   }
 };
 
-
-
 // GET: Retrieve all patient records
 const getAllPatients = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    const { fromDate, toDate, location, centerName } = req.query;
 
     // Build the filter object dynamically by copying all request query parameters
     let queryFilter = { ...req.query };
@@ -136,8 +140,16 @@ const getAllPatients = async (req, res) => {
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
       queryFilter.createdAt = {
         $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
-        $lte: new Date(new Date(toDate).setHours(23, 59, 59))
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59)),
       };
+    }
+
+    if (location) {
+      queryFilter.address = {}; // Ensure address object exists
+      queryFilter.address.city = location;
+    }
+    if (centerName) {
+      queryFilter.centerName = centerName;
     }
 
     const allBreastCancerPatients = await BPatient.find(queryFilter);
@@ -148,23 +160,10 @@ const getAllPatients = async (req, res) => {
     const totalData = [
       ...allBreastCancerPatients,
       ...allCervicalCancerPatients,
-      ...allSickleCellCancerPatients
+      ...allSickleCellCancerPatients,
     ];
 
-    // Map over the totalData array to extract day, month, and year from birthYear
-    const formattedData = totalData.map(patient => {
-      if (patient.birthYear) {
-        const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
-        return {
-          ...patient._doc, // Spread other patient data
-          birthDay: day,
-          birthMonth: month,
-          birthYear: year
-        };
-      }
-      return patient; // Return the patient as-is if birthYear is not available
-    });
-    return res.status(200).json({ totalData: formattedData });
+    return res.status(200).json({ totalData });
   } catch (error) {
     res
       .status(500)
@@ -175,7 +174,7 @@ const getAllPatients = async (req, res) => {
 const getAllPatientsForSubmitted = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
-
+         
     // Build the filter object dynamically by copying all request query parameters
     let queryFilter = { ...req.query };
 
@@ -186,23 +185,50 @@ const getAllPatientsForSubmitted = async (req, res) => {
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
       queryFilter.createdAt = {
         $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
-        $lte: new Date(new Date(toDate).setHours(23, 59, 59))
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59)),
       };
     }
 
+    const bStatus = [
+      "A+ve",
+      "A-ve",
+      "B+ve",
+      "B-ve",
+      "O+ve",
+      "O-ve",
+      "AB+ve",
+      "AB-ve",
+    ];
+    const rStatus = [
+      "Normal(HbAA)",
+      "Sickle Cell Trait(HbAS)",
+      "Sickle Cell Disease(HbSS)",
+    ];
 
-    const bStatus = ["A+ve", "A-ve", "B+ve", "B-ve", "O+ve", "O-ve", "AB+ve", "AB-ve"]
-    const rStatus = ["Normal(HbAA)", "Sickle Cell Trait(HbAS)", "Sickle Cell Disease(HbSS)"]
-
-    const allBreastCancerPatients = await BPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
-    const allCervicalCancerPatients = await CPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
-    const allSickleCellCancerPatients = await SPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allBreastCancerPatients = await BPatient.find({
+      ...queryFilter,
+      bloodStatus: { $in: bStatus },
+      resultStatus: { $in: rStatus },
+      cardStatus: "Submitted",
+    });
+    const allCervicalCancerPatients = await CPatient.find({
+      ...queryFilter,
+      bloodStatus: { $in: bStatus },
+      resultStatus: { $in: rStatus },
+      cardStatus: "Submitted",
+    });
+    const allSickleCellCancerPatients = await SPatient.find({
+      ...queryFilter,
+      bloodStatus: { $in: bStatus },
+      resultStatus: { $in: rStatus },
+      cardStatus: "Submitted",
+    });
 
     // Combine all patients into a single array
     const totalData = [
       ...allBreastCancerPatients,
       ...allCervicalCancerPatients,
-      ...allSickleCellCancerPatients
+      ...allSickleCellCancerPatients,
     ];
     return res.status(200).json({ totalData: totalData });
   } catch (error) {
@@ -215,7 +241,7 @@ const getAllPatientsForSubmitted = async (req, res) => {
 const getAllPatientsCount = async (req, res) => {
   try {
     const { fromDate, toDate } = req.query;
-    console.log(typeof fromDate, typeof toDate)
+    console.log(typeof fromDate, typeof toDate);
 
     // Convert empty strings to undefined
     // fromDate = fromDate =.== '' ? undefined : fromDate;
@@ -226,7 +252,7 @@ const getAllPatientsCount = async (req, res) => {
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
       dateFilter.createdAt = {
         $gte: new Date(new Date(fromDate).setHours(00, 00, 00)),
-        $lte: new Date(new Date(toDate).setHours(23, 59, 59))
+        $lte: new Date(new Date(toDate).setHours(23, 59, 59)),
       };
     }
 
@@ -239,12 +265,14 @@ const getAllPatientsCount = async (req, res) => {
     const totalData = [
       ...allBreastCancerPatients,
       ...allCervicalCancerPatients,
-      ...allSickleCellCancerPatients
+      ...allSickleCellCancerPatients,
     ];
     const totalCount = totalData.length;
     return res.status(200).json({
-      totalCount: totalCount, allBreastCancerPatients: allBreastCancerPatients.length,
-      allCervicalCancerPatients: allCervicalCancerPatients.length, allSickleCellCancerPatients: allSickleCellCancerPatients.length
+      totalCount: totalCount,
+      allBreastCancerPatients: allBreastCancerPatients.length,
+      allCervicalCancerPatients: allCervicalCancerPatients.length,
+      allSickleCellCancerPatients: allSickleCellCancerPatients.length,
     });
   } catch (error) {
     res
@@ -263,34 +291,42 @@ const updatePatient = async (req, res) => {
     patient1 = await BPatient.findById(patientId);
     if (!patient1) {
       patient2 = await CPatient.findById(patientId);
-    };
+    }
     if (!patient2) {
       patient3 = await SPatient.findById(patientId);
-    };
+    }
 
     // If patient is not found in any of the models
     if (!patient1 && !patient2 && !patient3) {
-      return res.status(404).json({ message: "Patient not found in any records" });
-    };
+      return res
+        .status(404)
+        .json({ message: "Patient not found in any records" });
+    }
     // Check if the request body has any fields for update
     if (Object.keys(updatedData).length === 0) {
       return res.status(400).json({
-        message: "No fields provided for update. Please pass at least one field to update.",
+        message:
+          "No fields provided for update. Please pass at least one field to update.",
       });
-    };
+    }
     if (patient1) {
       await BPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
-      return res.status(200).json({ message: "Breast cancer patient updated successfully" });
-    };
+      return res
+        .status(200)
+        .json({ message: "Breast cancer patient updated successfully" });
+    }
     if (patient2) {
       await CPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
-      return res.status(200).json({ message: "Cervical cancer patient updated successfully" });
-    };
+      return res
+        .status(200)
+        .json({ message: "Cervical cancer patient updated successfully" });
+    }
     if (patient3) {
       await SPatient.findByIdAndUpdate(patientId, updatedData, { new: true });
-      return res.status(200).json({ message: "Sickle cell patient updated successfully" });
-    };
-
+      return res
+        .status(200)
+        .json({ message: "Sickle cell patient updated successfully" });
+    }
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -308,25 +344,41 @@ const getPatientById = async (req, res) => {
     patient1 = await BPatient.findById(patientId);
     if (!patient1) {
       patient2 = await CPatient.findById(patientId);
-    };
+    }
     if (!patient2) {
       patient3 = await SPatient.findById(patientId);
-    };
+    }
 
     // If patient is not found in any of the models
     if (!patient1 && !patient2 && !patient3) {
-      return res.status(404).json({ message: "Patient not found in any records" });
-    };
+      return res
+        .status(404)
+        .json({ message: "Patient not found in any records" });
+    }
     if (patient1) {
-      return res.status(200).json({ message: "Breast cancer patient fetched successfully", data: patient1 });
-    };
+      return res
+        .status(200)
+        .json({
+          message: "Breast cancer patient fetched successfully",
+          data: patient1,
+        });
+    }
     if (patient2) {
-      return res.status(200).json({ message: "Cervical cancer patient fetched successfully", data: patient2 });
-    };
+      return res
+        .status(200)
+        .json({
+          message: "Cervical cancer patient fetched successfully",
+          data: patient2,
+        });
+    }
     if (patient3) {
-      return res.status(200).json({ message: "Sickle cell patient fetched successfully", data: patient3 });
-    };
-
+      return res
+        .status(200)
+        .json({
+          message: "Sickle cell patient fetched successfully",
+          data: patient3,
+        });
+    }
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -334,7 +386,6 @@ const getPatientById = async (req, res) => {
     });
   }
 };
-
 
 const getCenterCountsByCenterAndDate = async (req, res) => {
   try {
@@ -344,11 +395,11 @@ const getCenterCountsByCenterAndDate = async (req, res) => {
         $group: {
           _id: {
             centerName: "$centerName",
-            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           },
-          breastCancerCount: { $sum: 1 }
-        }
-      }
+          breastCancerCount: { $sum: 1 },
+        },
+      },
     ]);
 
     const cervicalCancerCounts = await CPatient.aggregate([
@@ -356,11 +407,11 @@ const getCenterCountsByCenterAndDate = async (req, res) => {
         $group: {
           _id: {
             centerName: "$centerName",
-            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           },
-          cervicalCancerCount: { $sum: 1 }
-        }
-      }
+          cervicalCancerCount: { $sum: 1 },
+        },
+      },
     ]);
 
     const sickleCellCancerCounts = await SPatient.aggregate([
@@ -368,11 +419,11 @@ const getCenterCountsByCenterAndDate = async (req, res) => {
         $group: {
           _id: {
             centerName: "$centerName",
-            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           },
-          sickleCellCancerCount: { $sum: 1 }
-        }
-      }
+          sickleCellCancerCount: { $sum: 1 },
+        },
+      },
     ]);
 
     // Combine counts by merging arrays and summing values for the same company and date
@@ -383,7 +434,11 @@ const getCenterCountsByCenterAndDate = async (req, res) => {
       dataArray.forEach(({ _id, [diseaseField]: count }) => {
         const key = `${_id.centerName}-${_id.date}`;
         if (!totalData[key]) {
-          totalData[key] = { centerName: _id.centerName, date: _id.date, totalCount: 0 };
+          totalData[key] = {
+            centerName: _id.centerName,
+            date: _id.date,
+            totalCount: 0,
+          };
         }
         // totalData[key][diseaseField] = count;
         totalData[key].totalCount += count;
@@ -396,7 +451,9 @@ const getCenterCountsByCenterAndDate = async (req, res) => {
     accumulateCounts(sickleCellCancerCounts, "sickleCellCancerCount");
 
     // Convert the totalData object back to an array and sort by date
-    const sortedTotalData = Object.values(totalData).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sortedTotalData = Object.values(totalData).sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
 
     return res.status(200).json({ totalData: sortedTotalData });
   } catch (error) {
@@ -407,26 +464,32 @@ const getCenterCountsByCenterAndDate = async (req, res) => {
   }
 };
 
-
 const getPatientCountsForGraph = async (req, res) => {
   try {
     const { timeFrame } = req.query; // 'daily', 'weekly', or 'monthly'
 
     if (!timeFrame) {
-      return res.status(400).json({ status: false, message: "timeFrame is a required field" });
+      return res
+        .status(400)
+        .json({ status: false, message: "timeFrame is a required field" });
     }
 
     // Get the current date
     const now = new Date();
-    let startDate, endDate, dateFormat, isWeekly = false, isMonthly = false, isDaily = false;
+    let startDate,
+      endDate,
+      dateFormat,
+      isWeekly = false,
+      isMonthly = false,
+      isDaily = false;
 
-    if (timeFrame === 'daily') {
+    if (timeFrame === "daily") {
       // For daily, we group by hour of the current day
       startDate = new Date(now.setHours(0, 0, 0, 0)); // Start of the day (12:00 AM)
       endDate = new Date(now.setHours(23, 59, 59, 999)); // End of the day (11:59 PM)
-      dateFormat = '%Y-%m-%d %H:00'; // Group by hour (e.g., "2024-10-01 13:00" for 1 PM)
+      dateFormat = "%Y-%m-%d %H:00"; // Group by hour (e.g., "2024-10-01 13:00" for 1 PM)
       isDaily = true;
-    } else if (timeFrame === 'weekly') {
+    } else if (timeFrame === "weekly") {
       // Weekly: Filter for the current week (Monday to Sunday)
       const currentDay = now.getDay();
       const diff = now.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust to Monday
@@ -435,59 +498,64 @@ const getPatientCountsForGraph = async (req, res) => {
       endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 6); // End of the week (Sunday)
       endDate.setHours(23, 59, 59, 999);
-      dateFormat = '%Y-%m-%d'; // Group by date for now
+      dateFormat = "%Y-%m-%d"; // Group by date for now
       isWeekly = true;
-    } else if (timeFrame === 'monthly') {
+    } else if (timeFrame === "monthly") {
       // Monthly: Filter for the current year (January to December)
       startDate = new Date(now.getFullYear(), 0, 1); // Start of the year (Jan 1)
       endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // End of the year (Dec 31)
-      dateFormat = '%Y-%m'; // Group by month
+      dateFormat = "%Y-%m"; // Group by month
       isMonthly = true;
     } else {
-      return res.status(400).json({ message: "Invalid time frame. Choose 'daily', 'weekly', or 'monthly'." });
+      return res
+        .status(400)
+        .json({
+          message:
+            "Invalid time frame. Choose 'daily', 'weekly', or 'monthly'.",
+        });
     }
 
     // Aggregation pipeline for each type of patient (breast cancer, cervical cancer, sickle cell)
     const breastCancerCounts = await BPatient.aggregate([
       {
-        $match: { createdAt: { $gte: startDate, $lte: endDate } } // Filter by date range
+        $match: { createdAt: { $gte: startDate, $lte: endDate } }, // Filter by date range
       },
       {
         $group: {
           _id: {
-            date: { $dateToString: { format: dateFormat, date: "$createdAt" } }
+            date: { $dateToString: { format: dateFormat, date: "$createdAt" } },
           },
-          breastCancerCount: { $sum: 1 }
-        }
-      }
+          breastCancerCount: { $sum: 1 },
+        },
+      },
     ]);
 
     const cervicalCancerCounts = await CPatient.aggregate([
       {
-        $match: { createdAt: { $gte: startDate, $lte: endDate } } // Filter by date range
+        $match: { createdAt: { $gte: startDate, $lte: endDate } }, // Filter by date range
       },
       {
         $group: {
           _id: {
-            date: { $dateToString: { format: dateFormat, date: "$createdAt" } }
+            date: { $dateToString: { format: dateFormat, date: "$createdAt" } },
           },
-          cervicalCancerCount: { $sum: 1 }
-        }
-      }
+          cervicalCancerCount: { $sum: 1 },
+        },
+      },
     ]);
 
     const sickleCellCancerCounts = await SPatient.aggregate([
       {
-        $match: { createdAt: { $gte: startDate, $lte: endDate } } // Filter by date range
+        $match: { createdAt: { $gte: startDate, $lte: endDate } }, // Filter by date range
       },
       {
         $group: {
           _id: {
-            date: { $dateToString: { format: dateFormat, date: "$createdAt" } }
+            date: { $dateToString: { format: dateFormat, date: "$createdAt" } },
           },
-          sickleCellCancerCount: { $sum: 1 }
-        }
-      }
+          sickleCellCancerCount: { $sum: 1 },
+        },
+      },
     ]);
 
     // Initialize a combined data object to accumulate counts by date or hour
@@ -512,30 +580,46 @@ const getPatientCountsForGraph = async (req, res) => {
     // For daily, initialize the totalData with zeros for each hour of the day
     const sortedTotalDataDaily = [];
     for (let hour = 0; hour < 24; hour++) {
-      const hourKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:00`;
+      const hourKey = `${now.getFullYear()}-${(now.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${now.getDate().toString().padStart(2, "0")} ${hour
+        .toString()
+        .padStart(2, "0")}:00`;
 
       // Format hour to AM/PM
-      const formattedHour = hour % 12 === 0 ? '12' : (hour % 12).toString(); // Convert to 12-hour format
-      const amPm = hour < 12 ? 'AM' : 'PM'; // Determine AM or PM
+      const formattedHour = hour % 12 === 0 ? "12" : (hour % 12).toString(); // Convert to 12-hour format
+      const amPm = hour < 12 ? "AM" : "PM"; // Determine AM or PM
 
       sortedTotalDataDaily.push({
         time: `${formattedHour} ${amPm}`, // AM/PM format
-        totalCount: totalData[hourKey]?.totalCount || 0 // Use existing count or 0
+        totalCount: totalData[hourKey]?.totalCount || 0, // Use existing count or 0
       });
     }
 
     // Initialize the totalData with zeros for each month of the year
     const sortedTotalDataMonthly = [];
     const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
 
     for (let month = 0; month < 12; month++) {
-      const formattedMonth = `${now.getFullYear()}-${(month + 1).toString().padStart(2, '0')}`; // Format to YYYY-MM
+      const formattedMonth = `${now.getFullYear()}-${(month + 1)
+        .toString()
+        .padStart(2, "0")}`; // Format to YYYY-MM
       sortedTotalDataMonthly.push({
         time: monthNames[month], // Month name
-        totalCount: totalData[formattedMonth]?.totalCount || 0 // Use existing count or 0
+        totalCount: totalData[formattedMonth]?.totalCount || 0, // Use existing count or 0
       });
     }
 
@@ -543,18 +627,26 @@ const getPatientCountsForGraph = async (req, res) => {
     if (isDaily) {
       return res.status(200).json({ totalData: sortedTotalDataDaily });
     } else if (isWeekly) {
-      const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const weekDays = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
       const sortedTotalDataWeekly = [];
 
       // Initialize the totalData with zeros for each day of the week
       for (let i = 0; i < 7; i++) {
         const dayDate = new Date(startDate);
         dayDate.setDate(startDate.getDate() + i); // Get each day of the week
-        const formattedDate = dayDate.toISOString().split('T')[0]; // Format to YYYY-MM-DD
+        const formattedDate = dayDate.toISOString().split("T")[0]; // Format to YYYY-MM-DD
         sortedTotalDataWeekly.push({
           time: formattedDate,
           dayName: weekDays[(i + 1) % 7], // Adjust to get day name
-          totalCount: totalData[formattedDate]?.totalCount || 0 // Use existing count or 0
+          totalCount: totalData[formattedDate]?.totalCount || 0, // Use existing count or 0
         });
       }
 
@@ -562,7 +654,13 @@ const getPatientCountsForGraph = async (req, res) => {
     } else if (isMonthly) {
       return res.status(200).json({ totalData: sortedTotalDataMonthly });
     } else {
-      return res.status(200).json({ totalData: Object.values(totalData).sort((a, b) => new Date(a.time) - new Date(b.time)) });
+      return res
+        .status(200)
+        .json({
+          totalData: Object.values(totalData).sort(
+            (a, b) => new Date(a.time) - new Date(b.time)
+          ),
+        });
     }
   } catch (error) {
     return res.status(500).json({
@@ -572,40 +670,56 @@ const getPatientCountsForGraph = async (req, res) => {
   }
 };
 
-
-
 const updateManyUsers = async (req, res) => {
   try {
     const { updates } = req.body; // Expecting updates to be an array of objects with { id, data }
-    const ids = updates.map(update => update.id); // Extract all IDs from the updates array
+    const ids = updates.map((update) => update.id); // Extract all IDs from the updates array
 
     // Create an array to hold update promises
     const updatePromises = [];
 
     // Check and update in BPatient model
     const bPatients = await BPatient.find({ _id: { $in: ids } });
-    bPatients.forEach(bPatient => {
-      const updateData = updates.find(update => update.id.toString() === bPatient._id.toString());
+    bPatients.forEach((bPatient) => {
+      const updateData = updates.find(
+        (update) => update.id.toString() === bPatient._id.toString()
+      );
       if (updateData) {
-        updatePromises.push(BPatient.findByIdAndUpdate(bPatient._id, updateData.data, { new: true }));
+        updatePromises.push(
+          BPatient.findByIdAndUpdate(bPatient._id, updateData.data, {
+            new: true,
+          })
+        );
       }
     });
 
     // Check and update in CPatient model
     const cPatients = await CPatient.find({ _id: { $in: ids } });
-    cPatients.forEach(cPatient => {
-      const updateData = updates.find(update => update.id.toString() === cPatient._id.toString());
+    cPatients.forEach((cPatient) => {
+      const updateData = updates.find(
+        (update) => update.id.toString() === cPatient._id.toString()
+      );
       if (updateData) {
-        updatePromises.push(CPatient.findByIdAndUpdate(cPatient._id, updateData.data, { new: true }));
+        updatePromises.push(
+          CPatient.findByIdAndUpdate(cPatient._id, updateData.data, {
+            new: true,
+          })
+        );
       }
     });
 
     // Check and update in SPatient model
     const sPatients = await SPatient.find({ _id: { $in: ids } });
-    sPatients.forEach(sPatient => {
-      const updateData = updates.find(update => update.id.toString() === sPatient._id.toString());
+    sPatients.forEach((sPatient) => {
+      const updateData = updates.find(
+        (update) => update.id.toString() === sPatient._id.toString()
+      );
       if (updateData) {
-        updatePromises.push(SPatient.findByIdAndUpdate(sPatient._id, updateData.data, { new: true }));
+        updatePromises.push(
+          SPatient.findByIdAndUpdate(sPatient._id, updateData.data, {
+            new: true,
+          })
+        );
       }
     });
 
@@ -614,20 +728,16 @@ const updateManyUsers = async (req, res) => {
 
     // Send a response with the updated documents
     return res.status(200).json({
-      message: 'Documents updated successfully',
+      message: "Documents updated successfully",
       data: updatedDocuments,
     });
   } catch (error) {
     return res.status(500).json({
-      message: 'Error updating documents',
+      message: "Error updating documents",
       error: error.message,
     });
   }
 };
-
-
-
-
 
 const deletePatient = async (req, res) => {
   try {
@@ -638,28 +748,35 @@ const deletePatient = async (req, res) => {
     patient1 = await BPatient.findById(patientId);
     if (!patient1) {
       patient2 = await CPatient.findById(patientId);
-    };
+    }
     if (!patient2) {
       patient3 = await SPatient.findById(patientId);
-    };
+    }
 
     // If patient is not found in any of the models
     if (!patient1 && !patient2 && !patient3) {
-      return res.status(404).json({ message: "Patient not found in any records" });
-    };
+      return res
+        .status(404)
+        .json({ message: "Patient not found in any records" });
+    }
     if (patient1) {
       await BPatient.findByIdAndUpdate(patientId, { isDeleted: true });
-      return res.status(200).json({ message: "Breast cancer patient deleted successfully" });
-    };
+      return res
+        .status(200)
+        .json({ message: "Breast cancer patient deleted successfully" });
+    }
     if (patient2) {
       await CPatient.findByIdAndUpdate(patientId, { isDeleted: true });
-      return res.status(200).json({ message: "Cervical cancer patient deleted successfully" });
-    };
+      return res
+        .status(200)
+        .json({ message: "Cervical cancer patient deleted successfully" });
+    }
     if (patient3) {
       await SPatient.findByIdAndUpdate(patientId, { isDeleted: true });
-      return res.status(200).json({ message: "Sickle cell patient deleted successfully" });
-    };
-
+      return res
+        .status(200)
+        .json({ message: "Sickle cell patient deleted successfully" });
+    }
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -702,7 +819,10 @@ const createCenterCode = async (req, res) => {
         isUnique = true; // If no existing center, break the loop
       }
     }
-    const data = await centerCodeModel.create({ centerName: centerName, centerCode });
+    const data = await centerCodeModel.create({
+      centerName: centerName,
+      centerCode,
+    });
     return res.status(201).json({
       message: "Center code created successfully",
       data,
@@ -717,9 +837,10 @@ const createCenterCode = async (req, res) => {
 
 const getCenterName = async (req, res) => {
   try {
-
     // Check if the centerName already exists in the database
-    const existingCenterName = await centerCodeModel.find().select({ centerName: 1 });
+    const existingCenterName = await centerCodeModel
+      .find()
+      .select({ centerName: 1 });
 
     return res.status(201).json({
       message: "Center code created successfully",
@@ -734,31 +855,35 @@ const getCenterName = async (req, res) => {
 };
 
 const getCities = async (req, res) => {
-
   try {
-    const country = 'India'; // Set the country field here
-    const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-      method: 'POST', // Use POST method as required by the API
-      headers: {
-        'Content-Type': 'application/json', // Specify the content type
-      },
-      body: JSON.stringify({ country }), // Send the country in the request body
-    });
+    const country = "India"; // Set the country field here
+    const response = await fetch(
+      "https://countriesnow.space/api/v0.1/countries/cities",
+      {
+        method: "POST", // Use POST method as required by the API
+        headers: {
+          "Content-Type": "application/json", // Specify the content type
+        },
+        body: JSON.stringify({ country }), // Send the country in the request body
+      }
+    );
 
     const data = await response.json(); // Parse the JSON response
 
     if (!response.ok) {
-      throw new Error(data.message || 'Error fetching cities');
+      throw new Error(data.message || "Error fetching cities");
     }
 
     res.status(200).json(data); // Return the fetched cities
   } catch (error) {
     // Error handling
-    res.status(500).json({ message: 'Error fetching cities', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching cities", error: error.message });
   }
 };
-const categoryModel = require("../models/categoryModel")
-const casteModel = require("../models/casteModel")
+const categoryModel = require("../models/categoryModel");
+const casteModel = require("../models/casteModel");
 
 const getCategory = async (req, res) => {
   try {
@@ -766,7 +891,9 @@ const getCategory = async (req, res) => {
     return res.status(200).json({ status: true, categoryList: c });
   } catch (error) {
     // Error handling
-    res.status(500).json({ message: 'Error fetching cities', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching cities", error: error.message });
   }
 };
 
@@ -776,11 +903,27 @@ const getCaste = async (req, res) => {
     return res.status(200).json({ status: true, casteList: c });
   } catch (error) {
     // Error handling
-    res.status(500).json({ message: 'Error fetching cities', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching cities", error: error.message });
   }
 };
 
 module.exports = {
-  register, loginUser, getAllPatients, getAllPatientsCount, updatePatient, deletePatient, getAllPatientsForSubmitted, createCenterCode,
-  getPatientCountsForGraph, getPatientById, updateManyUsers, getCenterCountsByCenterAndDate, getCities, getCenterName, getCategory, getCaste
+  register,
+  loginUser,
+  getAllPatients,
+  getAllPatientsCount,
+  updatePatient,
+  deletePatient,
+  getAllPatientsForSubmitted,
+  createCenterCode,
+  getPatientCountsForGraph,
+  getPatientById,
+  updateManyUsers,
+  getCenterCountsByCenterAndDate,
+  getCities,
+  getCenterName,
+  getCategory,
+  getCaste,
 };
