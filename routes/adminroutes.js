@@ -10,13 +10,13 @@ const router = express.Router(); // Initialize Express application
 
 // Route for user login
 // This route handles POST requests to "/login" and calls the loginUser controller function
-router.post("/register", register);
 
+router.post("/register", register);
 router.post("/login", loginUser);
 router.get("/getAllPatients", getAllPatients);
 router.get("/getAllPatientsCount", getAllPatientsCount);
 router.put("/updatePatient/:patientId", updatePatient);
-router.post("/deletePatient/:patientId", deletePatient);
+router.put("/deletePatient/:patientId", deletePatient);
 router.get("/getPatientById/:patientId", getPatientById);
 router.get("/getCenterCountsByCenterAndDate", getCenterCountsByCenterAndDate);
 router.get("/getPatientCountsForGraph", getPatientCountsForGraph);

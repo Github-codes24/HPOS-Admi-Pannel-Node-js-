@@ -7,6 +7,7 @@ const getAllPatients = async (req, res) => {
 
     // Build the filter object dynamically by copying all request query parameters
     let queryFilter = { ...req.query };
+    queryFilter.isDeleted = false;
 
     // Remove fromDate and toDate from the queryFilter since we handle them separately
     delete queryFilter.fromDate;

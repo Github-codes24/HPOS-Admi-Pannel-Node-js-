@@ -673,7 +673,13 @@ const centerCodeModel = require("../models/centerCodeModel");
 const createCenterCode = async (req, res) => {
   try {
     const { centerName } = req.body;
-
+    // Validate the input
+    if (!centerName) {
+      return res.status(400).json({
+        success: false,
+        errors: "centername field is required",
+      });
+    }
     // Check if the centerName already exists in the database
     const existingCenterName = await centerCodeModel.findOne({ centerName });
     if (existingCenterName) {
