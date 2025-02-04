@@ -3,7 +3,7 @@ const CervicalPatient = require("../models/cervicalPatientModel");
 // GET: Retrieve all patient records
 const getAllPatients = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    const { fromDate, toDate, location, centerName } = req.query;
 
     // Build the filter object dynamically by copying all request query parameters
     let queryFilter = { ...req.query };
@@ -11,6 +11,8 @@ const getAllPatients = async (req, res) => {
     // Remove fromDate and toDate from the queryFilter since we handle them separately
     delete queryFilter.fromDate;
     delete queryFilter.toDate;
+    delete queryFilter.location;
+
     // Apply date range filtering for createdAt field if fromDate and toDate are provided
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
       queryFilter.createdAt = {
@@ -18,18 +20,27 @@ const getAllPatients = async (req, res) => {
         $lte: new Date(new Date(toDate).setHours(23, 59, 59))
       };
     }
+
+    if (location) {
+      // queryFilter.address = {}; // Ensure address object exists
+      queryFilter['address.city'] = location;
+    }
+    if (centerName) {
+      queryFilter.centerName = centerName;
+    }
+
     const allPatients = await CervicalPatient.find(queryFilter);
     const formattedData = allPatients.map(patient => {
-        if (patient.birthYear) {
-          const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
-          return {
-            ...patient._doc, // Spread other patient data
-            birthDay: day,
-            birthMonth: month,
-            birthYear: year
-          };
-        }
-        return patient;
+      if (patient.birthYear) {
+        const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
+        return {
+          ...patient._doc, // Spread other patient data
+          birthDay: day,
+          birthMonth: month,
+          birthYear: year
+        };
+      }
+      return patient;
     });
     const totalCount = allPatients.length;
     return res.status(200).json({ data: formattedData });
@@ -58,11 +69,12 @@ const getAllPatientsCount = async (req, res) => {
 
     // Combine all patients into a single array
     const totalData = [
-        ...allCervicalCancerPatients,
-      ];
+      ...allCervicalCancerPatients,
+    ];
     const totalCount = totalData.length;
-    return res.status(200).json({ totalCount: totalCount
-     });
+    return res.status(200).json({
+      totalCount: totalCount
+    });
   } catch (error) {
     res
       .status(500)
@@ -183,16 +195,16 @@ const getAllPatientsForSubmittedForCervicalCancer = async (req, res) => {
       };
     }
 
-    
+
     const bStatus = ["A+ve", "A-ve", "B+ve", "B-ve", "O+ve", "O-ve", "AB+ve", "AB-ve"]
     const rStatus = ["Positive"]
 
-    const allCervicalCancerPatients = await CervicalPatient.find({...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
+    const allCervicalCancerPatients = await CervicalPatient.find({ ...queryFilter, bloodStatus: { $in: bStatus }, resultStatus: { $in: rStatus }, cardStatus: "Submitted" });
 
     // Combine all patients into a single array
     const totalData = [
-        ...allCervicalCancerPatients,
-      ];
+      ...allCervicalCancerPatients,
+    ];
     return res.status(200).json({ totalData: totalData });
   } catch (error) {
     res
@@ -277,11 +289,11 @@ const getPatientCountsForGraphForCervicalCancer = async (req, res) => {
     const sortedTotalDataDaily = [];
     for (let hour = 0; hour < 24; hour++) {
       const hourKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:00`;
-      
+
       // Format hour to AM/PM
       const formattedHour = hour % 12 === 0 ? '12' : (hour % 12).toString(); // Convert to 12-hour format
       const amPm = hour < 12 ? 'AM' : 'PM'; // Determine AM or PM
-      
+
       sortedTotalDataDaily.push({
         time: `${formattedHour} ${amPm}`, // AM/PM format
         totalCount: totalData[hourKey]?.totalCount || 0 // Use existing count or 0
@@ -383,7 +395,7 @@ const deleteCervicalCancerPatient = async (req, res) => {
     };
     await CervicalPatient.findByIdAndUpdate(patientId, { isDeleted: true });
     return res.status(200).json({ message: "Cervical cancer patient deleted successfully" });
-    
+
   } catch (error) {
     return res.status(500).json({
       message: "Error updating patient data",
@@ -392,5 +404,7 @@ const deleteCervicalCancerPatient = async (req, res) => {
   }
 };
 
-module.exports = { getAllPatients, getAllPatientsCount, updateCervicalCancerPatient, deleteCervicalCancerPatient, updateManyUsersForCervicalCancer,
-    getCenterCountsForCervicalCancer, getPatientCountsForGraphForCervicalCancer, getCervicalCancerPatientById,getAllPatientsForSubmittedForCervicalCancer };
+module.exports = {
+  getAllPatients, getAllPatientsCount, updateCervicalCancerPatient, deleteCervicalCancerPatient, updateManyUsersForCervicalCancer,
+  getCenterCountsForCervicalCancer, getPatientCountsForGraphForCervicalCancer, getCervicalCancerPatientById, getAllPatientsForSubmittedForCervicalCancer
+};

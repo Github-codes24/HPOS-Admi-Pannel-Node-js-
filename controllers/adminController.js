@@ -145,8 +145,9 @@ const getAllPatients = async (req, res) => {
     }
 
     if (location) {
-      queryFilter.address = {}; // Ensure address object exists
-      queryFilter.address.city = location;
+      // queryFilter.address = {}; // Ensure address object exists
+      queryFilter['address.city'] = location;
+      // queryFilter.address.city = location;
     }
     if (centerName) {
       queryFilter.centerName = centerName;

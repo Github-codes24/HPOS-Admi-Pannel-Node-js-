@@ -3,15 +3,17 @@ const Patient = require("../models/sickleCellPatientModel");
 // GET: Retrieve all patient records
 const getAllPatients = async (req, res) => {
   try {
-    const { fromDate, toDate } = req.query;
+    const { fromDate, toDate, location, centerName } = req.query;
 
     // Build the filter object dynamically by copying all request query parameters
     let queryFilter = { ...req.query };
-    queryFilter.isDeleted = false;
+
 
     // Remove fromDate and toDate from the queryFilter since we handle them separately
     delete queryFilter.fromDate;
     delete queryFilter.toDate;
+    delete queryFilter.location;
+
     // Apply date range filtering for createdAt field if fromDate and toDate are provided
     if (fromDate && fromDate !== null && toDate && toDate !== null) {
       queryFilter.createdAt = {
@@ -20,19 +22,29 @@ const getAllPatients = async (req, res) => {
       };
     }
 
+    if (location) {
+      // queryFilter.address = {}; // Ensure address object exists
+      queryFilter['address.city'] = location;
+      // queryFilter.address.city = location;
+    }
+    if (centerName) {
+      queryFilter.centerName = centerName;
+    }
+
+
     const allPatients = await Patient.find(queryFilter);
     const totalCount = allPatients.length;
     const formattedData = allPatients.map(patient => {
-        if (patient.birthYear) {
-          const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
-          return {
-            ...patient._doc, // Spread other patient data
-            birthDay: day,
-            birthMonth: month,
-            birthYear: year
-          };
-        }
-        return patient;
+      if (patient.birthYear) {
+        const [day, month, year] = patient.birthYear.split('-'); // Assuming birthYear format is dd-mm-yyyy
+        return {
+          ...patient._doc, // Spread other patient data
+          birthDay: day,
+          birthMonth: month,
+          birthYear: year
+        };
+      }
+      return patient;
     });
     return res.status(200).json({ data: formattedData });
   } catch (error) {
