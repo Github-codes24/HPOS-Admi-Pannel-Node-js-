@@ -29,7 +29,7 @@ const getAllPatients = async (req, res) => {
       queryFilter.centerName = centerName;
     }
 
-    queryFilter.isDeleted = false;
+    queryFilter.isDeleted = "false";
 
     console.log(queryFilter);
 
@@ -399,7 +399,7 @@ const deleteBreastCancerPatient = async (req, res) => {
     if (!patient) {
       return res.status(404).json({ message: "Patient not found in any records" });
     };
-    await Patient.findByIdAndUpdate(patientId, { isDeleted: true });
+    await Patient.findByIdAndUpdate(patientId, { isDeleted: "true" });
     return res.status(200).json({ message: "Breast cancer patient deleted successfully" });
 
   } catch (error) {

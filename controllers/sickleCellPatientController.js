@@ -30,7 +30,7 @@ const getAllPatients = async (req, res) => {
     if (centerName) {
       queryFilter.centerName = centerName;
     }
-    queryFilter.isDeleted = false;
+    queryFilter.isDeleted = "false";
 
     const allPatients = await Patient.find(queryFilter);
     const totalCount = allPatients.length;
@@ -428,7 +428,7 @@ const deleteSickleCellPatient = async (req, res) => {
     if (!patient) {
       return res.status(404).json({ message: "Patient not found in any records" });
     };
-    await Patient.findByIdAndUpdate(patientId, { isDeleted: true });
+    await Patient.findByIdAndUpdate(patientId, { isDeleted: "true" });
     return res.status(200).json({ message: "Sickle cell patient deleted successfully" });
     
   } catch (error) {

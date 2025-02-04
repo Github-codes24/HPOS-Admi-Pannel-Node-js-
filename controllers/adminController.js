@@ -152,7 +152,7 @@ const getAllPatients = async (req, res) => {
     if (centerName) {
       queryFilter.centerName = centerName;
     }
-    queryFilter.isDeleted = false;
+    queryFilter.isDeleted = "false";
 
     const allBreastCancerPatients = await BPatient.find(queryFilter);
     const allCervicalCancerPatients = await CPatient.find(queryFilter);
@@ -786,19 +786,19 @@ const deletePatient = async (req, res) => {
         .json({ message: "Patient not found in any records" });
     }
     if (patient1) {
-      await BPatient.findByIdAndUpdate(patientId, { isDeleted: true });
+      await BPatient.findByIdAndUpdate(patientId, { isDeleted: "true" });
       return res
         .status(200)
         .json({ message: "Breast cancer patient deleted successfully" });
     }
     if (patient2) {
-      await CPatient.findByIdAndUpdate(patientId, { isDeleted: true });
+      await CPatient.findByIdAndUpdate(patientId, { isDeleted: "true" });
       return res
         .status(200)
         .json({ message: "Cervical cancer patient deleted successfully" });
     }
     if (patient3) {
-      await SPatient.findByIdAndUpdate(patientId, { isDeleted: true });
+      await SPatient.findByIdAndUpdate(patientId, { isDeleted: "true" });
       return res
         .status(200)
         .json({ message: "Sickle cell patient deleted successfully" });

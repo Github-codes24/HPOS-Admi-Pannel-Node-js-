@@ -28,7 +28,7 @@ const getAllPatients = async (req, res) => {
     if (centerName) {
       queryFilter.centerName = centerName;
     }
-    queryFilter.isDeleted = false;
+    queryFilter.isDeleted = "false";
 
     const allPatients = await CervicalPatient.find(queryFilter);
     const formattedData = allPatients.map(patient => {
@@ -394,7 +394,7 @@ const deleteCervicalCancerPatient = async (req, res) => {
     if (!patient) {
       return res.status(404).json({ message: "Patient not found in any records" });
     };
-    await CervicalPatient.findByIdAndUpdate(patientId, { isDeleted: true });
+    await CervicalPatient.findByIdAndUpdate(patientId, { isDeleted: "true" });
     return res.status(200).json({ message: "Cervical cancer patient deleted successfully" });
 
   } catch (error) {
