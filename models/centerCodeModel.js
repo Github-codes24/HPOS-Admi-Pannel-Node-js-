@@ -4,11 +4,10 @@ const Schema = mongoose.Schema;
 const centerCodeSchema = new Schema({
     centerName: {
         type: String,
-        require: true,
+        required: true,
     },
     centerCode: {
         type: String,
-        require: true,
     },
 }, { timestamps: true });
 

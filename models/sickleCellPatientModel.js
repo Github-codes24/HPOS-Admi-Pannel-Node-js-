@@ -1,20 +1,22 @@
 
+
 const mongoose = require("mongoose");
 
-const sickleCellPatientSchema = new mongoose.Schema({
+const patientSchema = new mongoose.Schema({
   // personalName: { type: String, required: true },
   // abhaNumber: { type: String, required: true, unique: true },
   // aadhaarNumber: { type: String, required: true, unique: true },
   userImage: String,
   personalName: { type: String, required: true },
-  centerCode: { type: String , default: "Center Code"},
-  bloodStatus: { type: String , default: "Pending"},
-  resultStatus: { type: String , default: "Pending"},
-  HPLC: { type: String , default: "Pending"},
-  cardStatus: { type: String , default: "Pending"},
+  centerCode: { type: String },
+  bloodStatus: { type: String, default: "Pending" },
+  resultStatus: { type: String, default: "Pending" },
+  HPLC: { type: String, default: "Pending" },
+  cardStatus: { type: String, default: "Pending" },
   aadhaarNumber: { type: String, required: true, unique: true }, // Assuming Aadhaar number is unique
   number: { type: Number, required: true },
   birthYear: { type: String, required: true },
+  age: { type: String },
   gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
   mobileNumber: { type: String, required: true, match: /^[0-9]{10}$/ },
   fathersName: { type: String, required: true },
@@ -31,14 +33,14 @@ const sickleCellPatientSchema = new mongoose.Schema({
     pincode: { type: String, required: true, match: /^[0-9]{6}$/ },
   },
   centerName: { type: String, required: true },
-  isUnderMedication: { type: Boolean, required: true },
-  isUnderBloodTransfusion: { type: Boolean, required: true },
-  familyHistory: { type: Boolean, required: true },
+  isUnderMedicationForSickle: { type: Boolean },
+  isUnderBloodTransfusionForSickle: { type: Boolean },
+  familyHistoryForSickle: { type: String },
   UID: { type: String },
   isDeleted: { type: String, default: false },
-}, 
-{ timestamps: true });
+},
+  { timestamps: true },
+);
 
-const Patient = mongoose.model("Patient", sickleCellPatientSchema);
+const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;
-
