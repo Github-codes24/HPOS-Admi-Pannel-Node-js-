@@ -16,7 +16,7 @@ router.post("/login", loginUser);
 router.get("/getAllPatients", getAllPatients);
 router.get("/getAllPatientsCount", getAllPatientsCount);
 router.put("/updatePatient/:patientId", updatePatient);
-router.post("/deletePatient/:patientId", deletePatient);
+router.put("/deletePatient/:patientId", deletePatient);
 router.get("/getPatientById/:patientId", getPatientById);
 router.get("/getCenterCountsByCenterAndDate", getCenterCountsByCenterAndDate);
 router.get("/getPatientCountsForGraph", getPatientCountsForGraph);
