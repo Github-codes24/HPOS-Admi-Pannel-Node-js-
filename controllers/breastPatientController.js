@@ -29,6 +29,8 @@ const getAllPatients = async (req, res) => {
       queryFilter.centerName = centerName;
     }
 
+    queryFilter.isDeleted = false;
+
     console.log(queryFilter);
 
     const allPatients = await Patient.find(queryFilter);

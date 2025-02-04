@@ -30,7 +30,7 @@ const getAllPatients = async (req, res) => {
     if (centerName) {
       queryFilter.centerName = centerName;
     }
-
+    queryFilter.isDeleted = false;
 
     const allPatients = await Patient.find(queryFilter);
     const totalCount = allPatients.length;

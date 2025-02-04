@@ -130,11 +130,11 @@ const getAllPatients = async (req, res) => {
     const { fromDate, toDate, location, centerName } = req.query;
 
     // Build the filter object dynamically by copying all request query parameters
-    let queryFilter = { ...req.query };
+    let queryFilter = {};
 
     // Remove fromDate and toDate from the queryFilter since we handle them separately
-    delete queryFilter.fromDate;
-    delete queryFilter.toDate;
+    // delete queryFilter.fromDate;
+    // delete queryFilter.toDate;
 
     // Apply date range filtering for createdAt field if fromDate and toDate are provided
     if (fromDate && fromDate !== null && toDate && toDate !== null) {

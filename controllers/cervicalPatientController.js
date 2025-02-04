@@ -28,6 +28,7 @@ const getAllPatients = async (req, res) => {
     if (centerName) {
       queryFilter.centerName = centerName;
     }
+    queryFilter.isDeleted = false;
 
     const allPatients = await CervicalPatient.find(queryFilter);
     const formattedData = allPatients.map(patient => {
