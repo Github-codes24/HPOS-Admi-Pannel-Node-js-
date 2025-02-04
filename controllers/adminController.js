@@ -152,7 +152,8 @@ const getAllPatients = async (req, res) => {
     if (centerName) {
       queryFilter.centerName = centerName;
     }
-//add new code
+    queryFilter.isDeleted = false;
+
     const allBreastCancerPatients = await BPatient.find(queryFilter);
     const allCervicalCancerPatients = await CPatient.find(queryFilter);
     const allSickleCellCancerPatients = await SPatient.find(queryFilter);

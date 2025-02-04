@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/getAllPatients", getAllPatients);
 router.get("/getAllPatientsCount", getAllPatientsCount);
 router.put("/updateCervicalCancerPatient/:patientId", updateCervicalCancerPatient);
-router.post("/deleteCervicalCancerPatient/:patientId", deleteCervicalCancerPatient);
+router.put("/deleteCervicalCancerPatient/:patientId", deleteCervicalCancerPatient);
 router.get("/getCervicalCancerPatientById/:patientId", getCervicalCancerPatientById);
 router.get("/getCenterCountsForCervicalCancer", getCenterCountsForCervicalCancer);
 router.get("/getAllPatientsForSubmittedForCervicalCancer", getAllPatientsForSubmittedForCervicalCancer);
